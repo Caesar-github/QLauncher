@@ -1,0 +1,138 @@
+import QtQuick 2.5
+import QtQuick.Controls 1.4
+import QtQuick.Window 2.2
+import Qt.labs.settings 1.0
+import com.cai.qlauncher 1.0 as QL
+import config 1.0 as Config
+import debug 1.0 as D
+import config 1.0 as Config
+ApplicationWindow {
+    id: applicationWindow
+    flags: Qt.FramelessWindowHint | Qt.WindowFullScreen
+    property bool isWindowActive: Qt.application.state === Qt.ApplicationActive
+    property int dpi: Screen.pixelDensity * 25.4
+
+    property variant desktopData: ([])
+
+    property bool activeScreen: Qt.application.state === Qt.ApplicationActive
+
+    function updatePortraitMode() {
+        if (height >= width)
+            Config.Theme.portrait = true
+        else
+            Config.Theme.portrait = false
+        console.debug("updatePortraitMode:"+Config.Theme.portrait)
+    }
+
+    color: Config.Theme.colorApplicationWindow
+
+    width:  Screen.width
+    height: Screen.height
+
+    visible: true
+
+    onWidthChanged: updatePortraitMode()
+    onHeightChanged: updatePortraitMode()
+
+    onActiveScreenChanged: {
+        if (activeScreen)
+            QL.DisplayConfig.updateDisplayConfig()
+    }
+
+    onDesktopDataChanged: {
+        listModelDesktop.clear()
+        listModelDesktop.append(desktopData)
+
+    }
+
+    Component.onCompleted: {
+        Config.Theme.tablet = QL.DisplayConfig.isTablet
+        updatePortraitMode()
+    }
+
+    Timer {
+        interval: 150
+        running: true
+
+        onTriggered: {
+            QL.Launcher.registerMethods()
+            QL.ApplicationManager.registerBroadcast()
+        }
+    }
+
+    Loader {
+        id: loaderMainTheme
+
+        anchors.fill: parent
+
+        focus: true
+
+        source: Config.Theme.portrait?"theme/ThemePortrait.qml":"theme/ThemeLandscape.qml"
+    }
+
+    Loader {
+        id: loader
+
+        function unload() {
+            sourceComponent = null
+        }
+
+        anchors.fill: parent
+
+        sourceComponent:  undefined
+
+        focus: true
+
+        Keys.onBackPressed: {
+            if (loaderMainTheme.item && loaderMainTheme.item.opened) {
+                QL.Launcher.minimize()
+            }
+        }
+    }
+
+    Connections {
+        target: QL.ApplicationManager
+
+        onAddedApplicationToGrid: {
+            var dks = desktopData
+            dks.push({'name': name, 'pkgName': pkgName,'icon':icon})
+            //console.debug("onAddedApplicationToGrid name:"+name+",icon:"+icon);
+            desktopData = dks
+        }
+        onLauncherApplicationState:{
+            console.debug("onLauncherApplicationState state:"+state);
+            if(state)
+            {
+                applicationWindow.setVisible(false)
+            }
+            else
+            {
+                applicationWindow.setVisible(true)
+            }
+        }
+    }
+
+    Settings {
+        property alias desktop: applicationWindow.desktopData
+    }
+
+    ListModel {
+        id: listModelDesktop
+    }
+
+    /*D.Debug {
+        debugData: {
+            'height': applicationWindow.height,
+                    'width': applicationWindow.width,
+                    //'wall_height': background.height,
+                    //'wall_width': background.width,
+                    'Theme.getColumns':Config.Theme.getColumns(),
+                    'Theme.getRows':Config.Theme.getRows(),
+                    'Config.Theme.portrait':Config.Theme.portrait,
+                    //'dp': QL.DisplayConfig.dp.toFixed(2),
+                    //'dpi': QL.DisplayConfig.dpi.toFixed(2),
+                    //'density': QL.DisplayConfig.density.toFixed(2),
+                    'isTablet': QL.DisplayConfig.isTablet
+        }
+    }*/
+}

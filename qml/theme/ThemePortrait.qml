@@ -11,7 +11,8 @@ FocusScope {
             verticalAlignment: Image.AlignTop
             source: "qrc:/images/background"
             //width: applicationWindow.width
-            height: applicationWindow.height
+            sourceSize.height:applicationWindow.height
+            //height: applicationWindow.height
         }
     property int navbarMargin: QL.DisplayConfig.navBarVisible ? QL.DisplayConfig.navigationBarHeight : 0
     property int statusbarMargin: QL.DisplayConfig.statusBarHeight

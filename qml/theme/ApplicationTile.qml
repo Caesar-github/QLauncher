@@ -20,8 +20,8 @@ Item {
     Drag.hotSpot.x: width / 2
     Drag.hotSpot.y: height / 2
 
-    width: 80
-    height: 80
+    //width: 80* QL.DisplayConfig.dp
+    //height: 80* QL.DisplayConfig.dp
 
     Component.onCompleted: {
         _originalParent = parent
@@ -41,9 +41,10 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
 
             asynchronous: true
-
-            Layout.preferredHeight: Math.round(72 * DisplayConfig.dp)
-            Layout.preferredWidth: Math.round(72 * DisplayConfig.dp)
+            sourceSize.width: Math.round(72 * DisplayConfig.dp)
+            sourceSize.height: Math.round(72 * DisplayConfig.dp)
+            //Layout.preferredHeight: Math.round(72 * DisplayConfig.dp)
+            //Layout.preferredWidth: Math.round(72 * DisplayConfig.dp)
 
             fillMode: Image.PreserveAspectFit
         }
@@ -60,7 +61,7 @@ Item {
             wrapMode: Text.NoWrap
             maximumLineCount: 1
 
-            font.pixelSize: 13 * DisplayConfig.dp
+            font.pixelSize: 18 * DisplayConfig.dp
 
             color: "#000000"
         }
@@ -89,44 +90,5 @@ Item {
 
         onReleased: root._newParent = (root.Drag.target !== null ? root.Drag.target : root._originalParent)
 
-        states: [
-            State {
-                name: "dragging"
-                when: mouseArea.drag.active
-
-                ParentChange { target: root; parent: root._originalParent }
-
-                AnchorChanges {
-                    target: root
-                    anchors {
-                        verticalCenter: undefined
-                        horizontalCenter: undefined
-                        left: undefined
-                        right: undefined
-                        top: undefined
-                        bottom: undefined
-                    }
-                }
-            },
-            State {
-                name: "notDragging"
-                when: !mouseArea.drag.active
-
-                ParentChange { target: root; parent: root._newParent }
-
-                AnchorChanges {
-                    target: root
-
-                    anchors {
-                        verticalCenter: parent !== root._originalParent ? parent.verticalCenter : undefined
-                        horizontalCenter: parent !== root._originalParent ? parent.horizontalCenter : undefined
-                        left: undefined
-                        right: undefined
-                        top: undefined
-                        bottom: undefined
-                    }
-                }
-            }
-        ]
     }
 }

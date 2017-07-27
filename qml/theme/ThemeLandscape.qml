@@ -10,7 +10,8 @@ FocusScope {
             smooth: true
             verticalAlignment: Image.AlignTop
             source: "qrc:/images/background"
-            width: applicationWindow.width
+            //width: applicationWindow.width
+            sourceSize.width:applicationWindow.width
             //height: applicationWindow.height
         }
     property int navbarMargin: QL.DisplayConfig.navBarVisible ? QL.DisplayConfig.navigationBarHeight : 0
@@ -77,52 +78,5 @@ FocusScope {
             if (height !== 0)
                 cacheBuffer = Math.max(1080, height * 5)
         }
-    }
-
-
-    GridView {
-        anchors {
-            top: parent.top; topMargin: QL.DisplayConfig.statusBarHeight
-            left: parent.left
-            right: parent.right
-        }
-
-        height: 4 * (80 * QL.DisplayConfig.dp)
-        model: 16
-        enabled: false
-        interactive: false
-        cellHeight: height / 4
-        cellWidth: width / 4
-
-        delegate: DropArea {
-            width: GridView.view.cellWidth
-            height: GridView.view.cellHeight
-        }
-    }
-
-    Row {
-        id: rowFavorites
-
-        anchors {
-            bottom: parent.bottom; bottomMargin: root.navbarMargin
-        }
-
-        height: 80 * QL.DisplayConfig.dp
-
-        Repeater {
-            model: 5
-
-            DropArea {
-                width: 80 * QL.DisplayConfig.dp
-                height: 80 * QL.DisplayConfig.dp
-            }
-        }
-    }
-
-    Connections {
-        target: QL.Launcher
-
-        onNewIntentReceived: applicationAll.close()
-        onMinimized: applicationAll.close()
     }
 }

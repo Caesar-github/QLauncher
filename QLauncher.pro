@@ -16,8 +16,6 @@ SOURCES += $$files($$PWD/src/*.cpp)
 
 RESOURCES += resources.qrc
 
-CONFIG += ordered
-
 SUBDIRS += \
     src
 

@@ -5,8 +5,6 @@
         <file>qml/config/Theme.qml</file>
         <file>qml/debug/Debug.qml</file>
         <file>qml/debug/qmldir</file>
-        <file>qml/theme/ApplicationGrid.qml</file>
-        <file>qml/theme/ApplicationAll.qml</file>
         <file>qml/theme/ApplicationTile.qml</file>
         <file>qml/theme/ThemeLandscape.qml</file>
         <file>qml/theme/ThemePortrait.qml</file>

@@ -120,8 +120,9 @@ ApplicationWindow {
         id: listModelDesktop
     }
 
-    /*D.Debug {
+   /* D.Debug {
         debugData: {
+            'DisplayConfig.dp': QL.DisplayConfig.dp,
             'height': applicationWindow.height,
                     'width': applicationWindow.width,
                     //'wall_height': background.height,
@@ -133,6 +134,7 @@ ApplicationWindow {
                     //'dpi': QL.DisplayConfig.dpi.toFixed(2),
                     //'density': QL.DisplayConfig.density.toFixed(2),
                     'isTablet': QL.DisplayConfig.isTablet
+                    //
         }
     }*/
 }

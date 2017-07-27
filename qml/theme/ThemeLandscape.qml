@@ -6,11 +6,12 @@ FocusScope {
     id: root
     Image {
             id: background
-            fillMode: Image.PreserveAspectFit
+            fillMode: Image.PreserveAspectCrop
             smooth: true
+            //horizontalAlignment: Image.AlignLeft
             verticalAlignment: Image.AlignTop
             source: "qrc:/images/background"
-            //width: applicationWindow.width
+            width: applicationWindow.width
             sourceSize.width:applicationWindow.width
             //height: applicationWindow.height
         }

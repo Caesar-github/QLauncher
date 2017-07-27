@@ -101,16 +101,11 @@ void ApplicationManager::retrievePackages()
    //qDebug() << "apps->size():" << apps->size();
     for(int i=0; i< apps->size();i++){
         Application* app= apps->at(i);
-        //qDebug() << "apps(" << i<<") app->mName="<<app->mName<<",pkgName="<<app->pkgName()<<"app->app_icon="<<app->app_icon;
+       // qDebug() << "apps(" << i<<") app->mName="<<app->name()<<",pkgName="<<app->pkgName()<<"app->app_icon="<<app->icon();
         mApplications.append(new Application(app->name(), app->pkgName(),app->icon()));
+        emit addedApplicationToGrid(app->name(), app->pkgName(),app->icon());
     }
-
-    foreach (QObject *applicationObject, mApplications) {
-        Application *application = qobject_cast<Application*>(applicationObject);
-        // qDebug() << "application->mName="<<application->mName<< "cc application->app_icon="<<application->icon();
-        emit addedApplicationToGrid(application->name(), application->pkgName(),application->icon());
-
-    }
+    delete appScanner;
     endResetModel();
     emit sectionsChanged();
 }

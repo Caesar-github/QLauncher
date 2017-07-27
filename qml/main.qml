@@ -51,7 +51,7 @@ ApplicationWindow {
     }
 
     Timer {
-        interval: 150
+        interval: 250
         running: true
 
         onTriggered: {
@@ -68,26 +68,6 @@ ApplicationWindow {
         focus: true
 
         source: Config.Theme.portrait?"theme/ThemePortrait.qml":"theme/ThemeLandscape.qml"
-    }
-
-    Loader {
-        id: loader
-
-        function unload() {
-            sourceComponent = null
-        }
-
-        anchors.fill: parent
-
-        sourceComponent:  undefined
-
-        focus: true
-
-        Keys.onBackPressed: {
-            if (loaderMainTheme.item && loaderMainTheme.item.opened) {
-                QL.Launcher.minimize()
-            }
-        }
     }
 
     Connections {

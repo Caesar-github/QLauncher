@@ -26,6 +26,15 @@ FocusScope {
         onPressAndHold: QL.Launcher.pickWallpaper()
     }
 
+    Keys.onPressed: {
+         //console.debug("key onPressed:"+event.key);
+              if (event.key === Qt.Key_PowerOff) {
+                  QL.Launcher.powerControl()
+                  //event.accepted = true;
+              }
+          }
+
+
     GridView {
         id: gridView
 

@@ -13,6 +13,7 @@ public:
     Q_INVOKABLE void emitNewIntent();
     Q_INVOKABLE void registerMethods();
     Q_INVOKABLE void minimize();
+    Q_INVOKABLE void powerControl();
 
 signals:
     void newIntentReceived();
@@ -20,6 +21,8 @@ signals:
 
 private:
     void registerNativeMethods();
+private slots:
+    void slot_standby();
 
 };
 

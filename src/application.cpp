@@ -5,11 +5,20 @@ Application::Application(QObject *parent) :
 {
 }
 
-Application::Application(const QString &name, const QString &pkgName,const QString &icon, QObject *parent) :
+/*Application::Application(const QString &name, const QString &pkgName,const QString &icon, QObject *parent) :
     QObject(parent),
     mName(name),
     mApplicationName(pkgName),
     mIcon(icon)
+{
+}*/
+
+Application::Application(const QString &name, const QString &pkgName,const QString &icon, const QString exitCallback,QObject *parent) :
+    QObject(parent),
+    mName(name),
+    mApplicationName(pkgName),
+    mIcon(icon),
+    mExitCallback(exitCallback)
 {
 }
 
@@ -53,4 +62,17 @@ void Application::setApplicationName(const QString &pkgName)
 
     mApplicationName = pkgName;
     emit pkgNameChanged();
+}
+
+QString Application::exitCallback() const
+{
+    return mExitCallback;
+}
+
+void Application::setExitCallback(const QString &exitCallback)
+{
+    if (mExitCallback == exitCallback)
+        return;
+    mExitCallback = exitCallback;
+    emit exitCallbackChanged();
 }

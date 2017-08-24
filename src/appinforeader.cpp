@@ -3,7 +3,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QFile>
-
+#include <QDebug>
 AppInfoReader::AppInfoReader()
 {
 
@@ -47,6 +47,11 @@ Application* AppInfoReader::fromJsonObject(QByteArray byteArray){
             QJsonValue app_file= jsonObject.take("app_file");
             appInfo->app_file=app_file.toString("");
             appInfo->setApplicationName(app_file.toString(""));
+        }
+        if(jsonObject.contains("exit_callback"))
+        {
+            QJsonValue exit_callback= jsonObject.take("exit_callback");
+            appInfo->setExitCallback(exit_callback.toString(""));
         }
         return appInfo;
     }
@@ -95,6 +100,11 @@ Application* AppInfoReader::loadFromJsonObject(QJsonObject &jsonObject){
     {
         QJsonValue app_file= jsonObject.take("app_file");
         appInfo->app_file=app_file.toString("");
+    }
+    if(jsonObject.contains("exit_callback"))
+    {
+        QJsonValue exit_callback= jsonObject.take("exit_callback");
+        appInfo->setExitCallback(exit_callback.toString(""));
     }
     return appInfo;
 }

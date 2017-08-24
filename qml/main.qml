@@ -75,8 +75,8 @@ ApplicationWindow {
 
         onAddedApplicationToGrid: {
             var dks = desktopData
-            dks.push({'name': name, 'pkgName': pkgName,'icon':icon})
-            //console.debug("onAddedApplicationToGrid name:"+name+",icon:"+icon);
+            dks.push({'name': name, 'pkgName': pkgName,'icon':icon,'exitCallback':exitCallback})
+            //console.debug("onAddedApplicationToGrid name:"+name+",exitCallback:"+exitCallback);
             desktopData = dks
         }
         onLauncherApplicationState:{

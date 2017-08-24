@@ -78,7 +78,7 @@ FocusScope {
             onClicked:
             {
                 //console.debug("ThemeMain:onClicked "+model.name+",model.pkgName="+model.pkgName);
-                QL.ApplicationManager.launchApplication(model.name,model.pkgName)
+                QL.ApplicationManager.launchApplication(model.name,model.pkgName,model.exitCallback)
             }
             onPressAndHold: root.pressAndHold(model, x, y)
         }

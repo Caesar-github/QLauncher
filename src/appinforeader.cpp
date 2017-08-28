@@ -42,6 +42,12 @@ Application* AppInfoReader::fromJsonObject(QByteArray byteArray){
             QJsonValue app_icon= jsonObject.take("app_icon");
             appInfo->setIcon(app_icon.toString("0"""));
         }
+        if(jsonObject.contains("app_argv"))
+        {
+            QJsonValue app_argv= jsonObject.take("app_argv");
+            appInfo->setArgv(app_argv.toString("0"""));
+        }
+
         if(jsonObject.contains("app_file"))
         {
             QJsonValue app_file= jsonObject.take("app_file");
@@ -95,6 +101,11 @@ Application* AppInfoReader::loadFromJsonObject(QJsonObject &jsonObject){
     {
         QJsonValue app_icon= jsonObject.take("app_icon");
         appInfo->setIcon(app_icon.toString("0"));
+    }
+    if(jsonObject.contains("app_argv"))
+    {
+        QJsonValue app_argv= jsonObject.take("app_argv");
+        appInfo->setArgv(app_argv.toString("0"));
     }
     if(jsonObject.contains("app_file"))
     {

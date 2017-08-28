@@ -13,10 +13,11 @@ Application::Application(QObject *parent) :
 {
 }*/
 
-Application::Application(const QString &name, const QString &pkgName,const QString &icon, const QString exitCallback,QObject *parent) :
+Application::Application(const QString &name, const QString &pkgName, const QString &argv,const QString &icon, const QString exitCallback,QObject *parent) :
     QObject(parent),
     mName(name),
     mApplicationName(pkgName),
+    mArgv(argv),
     mIcon(icon),
     mExitCallback(exitCallback)
 {
@@ -62,6 +63,19 @@ void Application::setApplicationName(const QString &pkgName)
 
     mApplicationName = pkgName;
     emit pkgNameChanged();
+}
+
+QString Application::argv() const
+{
+    return mArgv;
+}
+void Application::setArgv(const QString &argv)
+{
+    if (mArgv == argv)
+        return;
+
+    mArgv = argv;
+    emit argvChanged();
 }
 
 QString Application::exitCallback() const

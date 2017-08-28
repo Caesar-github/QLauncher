@@ -10,7 +10,7 @@
 ApplicationManager::ApplicationManager(QObject *parent) :
     QAbstractListModel(parent)
 {
-    connect(this, SIGNAL(newApplicationDetected(QString, QString,QString,QString)), this, SLOT(addApplication(QString, QString,QString,QString)));
+    connect(this, SIGNAL(newApplicationDetected(QString, QString,QString,QString,QString)), this, SLOT(addApplication(QString, QString,QString,QString,QString)));
     connect(this, SIGNAL(removedApplication(QString)), this, SLOT(removeApplication(QString)));
 
     pro=new  QProcess(this);
@@ -40,15 +40,16 @@ QVariant ApplicationManager::data(const QModelIndex &index, int role) const
     return QVariant();
 }
 
-void ApplicationManager::launchApplication(const QString &application,const QString &pkgName,const QString &exitCallback)
+void ApplicationManager::launchApplication(const QString &application,const QString &pkgName,const QString &argv,const QString &exitCallback)
 {
-#ifdef PLATFORM_WAYLAND
-    qDebug() << "launchApplication(PLATFORM_WAYLAND):application=" << application;
     QStringList arguments;
+#ifdef PLATFORM_WAYLAND
+    qDebug() << "launchApplication(PLATFORM_WAYLAND):application=" << application<<",argv="<<argv;
+
     arguments <<"-platform"<<"wayland";
     pro->start("/usr/local/"+application+"/"+pkgName,arguments);
 #else
-    qDebug() << "launchApplication:application=" << application;
+    qDebug() << "launchApplication:application=" << application<<",argv="<<argv;
 
     //QStringList arguments;
     //arguments <<"-platform"<<"EGLFS";
@@ -81,8 +82,17 @@ void ApplicationManager::launchApplication(const QString &application,const QStr
         //pro->setStandardOutputFile("/tmp/"+application+"_out.log",QIODevice::Truncate);
         //pro->setStandardErrorFile("/tmp/"+application+"_error.log",QIODevice::Truncate);
     }
-    pro->start("/usr/local/"+application+"/"+pkgName);
-
+    if(!argv.isEmpty())
+    {
+        arguments=argv.split(" ");
+        //foreach(QString str,arguments)
+        //    qDebug() <<str;
+         pro->start("/usr/local/"+application+"/"+pkgName,arguments);
+    }
+    else
+    {
+         pro->start("/usr/local/"+application+"/"+pkgName);
+    }
     emit  launcherApplicationState(true);
 #endif
 
@@ -108,8 +118,8 @@ void ApplicationManager::retrievePackages()
     for(int i=0; i< apps->size();i++){
         Application* app= apps->at(i);
        // qDebug() << "apps(" << i<<") app->mName="<<app->name()<<",pkgName="<<app->pkgName()<<"app->app_icon="<<app->icon();
-        mApplications.append(new Application(app->name(), app->pkgName(),app->icon(),app->exitCallback()));
-        emit addedApplicationToGrid(app->name(), app->pkgName(),app->icon(),app->exitCallback());
+        mApplications.append(new Application(app->name(), app->pkgName(),app->argv(),app->icon(),app->exitCallback()));
+        emit addedApplicationToGrid(app->name(), app->pkgName(),app->argv(),app->icon(),app->exitCallback());
     }
     delete appScanner;
     endResetModel();
@@ -134,9 +144,9 @@ void ApplicationManager::openApplicationInfo(const QString &pkgName)
     Q_UNUSED(pkgName)
 }
 
-void ApplicationManager::addApplicationToGrid(const QString &name, const QString &pkgName,const QString &icon,const QString &exitCallback)
+void ApplicationManager::addApplicationToGrid(const QString &name, const QString &pkgName,const QString &argv,const QString &icon,const QString &exitCallback)
 {
-    emit addedApplicationToGrid(name, pkgName,icon,exitCallback);
+    emit addedApplicationToGrid(name, pkgName,argv,icon,exitCallback);
 }
 
 QStringList ApplicationManager::sections() const
@@ -144,7 +154,7 @@ QStringList ApplicationManager::sections() const
     return mSections;
 }
 
-void ApplicationManager::addApplication(const QString &name, const QString &pkgName,const QString &icon,const QString &exitCallback)
+void ApplicationManager::addApplication(const QString &name, const QString &pkgName,const QString &argv,const QString &icon,const QString &exitCallback)
 {
     int i;
     for (i = 0; i < mApplications.length(); ++i) {
@@ -155,7 +165,7 @@ void ApplicationManager::addApplication(const QString &name, const QString &pkgN
 
     qDebug() << Q_FUNC_INFO << "NAME:" << name << " PACKAGE:" << pkgName;
     beginInsertRows(QModelIndex(), i, i);
-    Application *application = new Application(name, pkgName,icon,exitCallback);
+    Application *application = new Application(name, pkgName,argv,icon,exitCallback);
     mApplications.insert(i, application);
     endInsertRows();
 }
@@ -181,9 +191,9 @@ void ApplicationManager::removeApplication(const QString &pkgName)
     sectionsChanged();
 }
 
-void ApplicationManager::emitAddApplication(const QString &name, const QString &pkgName,const QString &icon,const QString &exitCallback)
+void ApplicationManager::emitAddApplication(const QString &name, const QString &pkgName,const QString &argv,const QString &icon,const QString &exitCallback)
 {
-    emit newApplicationDetected(name, pkgName,icon,exitCallback);
+    emit newApplicationDetected(name, pkgName,argv,icon,exitCallback);
 }
 
 void ApplicationManager::emitRemoveApplication(const QString &pkgName)

@@ -149,7 +149,7 @@ bool DisplayConfig::isTablet()
 int DisplayConfig::displayDpi()
 {
     int dpi=QGuiApplication::primaryScreen()->physicalDotsPerInch();
-    if(dpi<0 || dpi >640)
+    if(dpi<120 || dpi >640)
     {
         dpi=160;
          qDebug() << "displayDpi may read wrong value,let's set to 160";
@@ -160,7 +160,7 @@ int DisplayConfig::displayDpi()
 float DisplayConfig::displayDensity()
 {
     int density=QGuiApplication::primaryScreen()->physicalDotsPerInch();
-    if(density<0 || density >640)
+    if(density<120 || density >640)
     {
         density=160;
         qDebug() << "displayDensity may read wrong value,let's set to 160";

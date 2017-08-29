@@ -92,9 +92,9 @@ ApplicationWindow {
         }
     }
 
-    Settings {
+    /*Settings {
         property alias desktop: applicationWindow.desktopData
-    }
+    }*/
 
     ListModel {
         id: listModelDesktop

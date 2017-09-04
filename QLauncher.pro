@@ -12,9 +12,9 @@ QML_IMPORT_PATH = $$PWD/qml
 
 HEADERS += $$files($$PWD/src/*.h) \
            src/powerManager/PowerManager.h
-
 SOURCES += $$files($$PWD/src/*.cpp) \
            src/powerManager/PowerManager.cpp
+
 RESOURCES += resources.qrc
 
 SUBDIRS += \

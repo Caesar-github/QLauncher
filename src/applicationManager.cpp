@@ -6,16 +6,73 @@
 #include <QApplication>
 #include "appscanner.h"
 
+#define MSG_DISABLE_APPLICATION "APP_DISABLE\n"
+#define MSG_ENABLE_APPLICATION "APP_ENABLE\n"
 
 ApplicationManager::ApplicationManager(QObject *parent) :
     QAbstractListModel(parent)
 {
-    connect(this, SIGNAL(newApplicationDetected(QString, QString,QString,QString,QString)), this, SLOT(addApplication(QString, QString,QString,QString,QString)));
+    init();
+    initConnection();
+}
+
+void ApplicationManager::init()
+{
+    m_ueventThread = new UeventThread();
+    m_ueventThread->start();
+
+    // Define for control life cycle of cvbsView Application
+    cvbsViewPro = new QProcess(this);
+#ifdef PLATFORM_WAYLAND
+    cvbsViewPro->setProgram("/usr/local/cvbsView/cvbsView -platform wayland");
+#else
+    cvbsViewPro->setProgram("/usr/local/cvbsView/cvbsView");
+#endif
+
+    pro = new QProcess(this);
+}
+
+void ApplicationManager::initConnection()
+{
+    connect(this, SIGNAL(newApplicationDetected(QString, QString,QString,QString)), this, SLOT(addApplication(QString, QString,QString,QString)));
     connect(this, SIGNAL(removedApplication(QString)), this, SLOT(removeApplication(QString)));
 
-    pro=new  QProcess(this);
     connect(pro, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(processFinished(int, QProcess::ExitStatus)));
     connect(pro, SIGNAL(error(QProcess::ProcessError)), this, SLOT(processError(QProcess::ProcessError)));
+
+    connect(m_ueventThread,SIGNAL(reverseTriggerStateChanged(bool)),this,SLOT(slot_onReverseTriggerStateChanged(bool)));
+    connect(cvbsViewPro,SIGNAL(finished(int)),this,SLOT(enableChildProcess()));
+}
+
+void ApplicationManager::slot_onReverseTriggerStateChanged(bool triggered)
+{
+    if(triggered){
+        qDebug("Start cvbsView application.");
+        cvbsViewPro->start();
+        disableChildProcess();
+    }else{
+        qDebug("Close cvbsView application.");
+        cvbsViewPro->terminate();
+        enableChildProcess();
+    }
+}
+
+void ApplicationManager::enableChildProcess()
+{
+    if(pro->state() == QProcess::Running){
+        pro->write(MSG_ENABLE_APPLICATION);
+    }else{
+        emit launcherApplicationState(false);
+    }
+}
+
+void ApplicationManager::disableChildProcess()
+{
+    if(pro->state() == QProcess::Running){
+        pro->write(MSG_DISABLE_APPLICATION);
+    }else{
+        emit launcherApplicationState(true);
+    }
 }
 
 int ApplicationManager::rowCount(const QModelIndex &parent) const
@@ -61,7 +118,6 @@ void ApplicationManager::launchApplication(const QString &application,const QStr
         env.insert("QT_EGLFSPLATFORM_USE_GST_VIDEOSINK", "1");
         env.insert("QT_GSTREAMER_WINDOW_VIDEOSINK", "kmssink"); // Add  environment variable
         //env.insert("GST_DEBUG", "kmssink:5");//show video fps
-
     }
     else
     {
@@ -79,19 +135,19 @@ void ApplicationManager::launchApplication(const QString &application,const QStr
         foreach(QString str,env.toStringList())
             qDebug() <<str;
 
-        //pro->setStandardOutputFile("/tmp/"+application+"_out.log",QIODevice::Truncate);
-        //pro->setStandardErrorFile("/tmp/"+application+"_error.log",QIODevice::Truncate);
+        pro->setStandardOutputFile("/tmp/"+application+"_out.log",QIODevice::Truncate);
+        pro->setStandardErrorFile("/tmp/"+application+"_error.log",QIODevice::Truncate);
     }
     if(!argv.isEmpty())
     {
         arguments=argv.split(" ");
         //foreach(QString str,arguments)
         //    qDebug() <<str;
-         pro->start("/usr/local/"+application+"/"+pkgName,arguments);
+        pro->start("/usr/local/"+application+"/"+pkgName,arguments);
     }
     else
     {
-         pro->start("/usr/local/"+application+"/"+pkgName);
+        pro->start("/usr/local/"+application+"/"+pkgName);
     }
     emit  launcherApplicationState(true);
 #endif
@@ -114,10 +170,10 @@ void ApplicationManager::retrievePackages()
 
     QList<Application*> *apps= appScanner->scan("/usr/local");
 
-   //qDebug() << "apps->size():" << apps->size();
+    //qDebug() << "apps->size():" << apps->size();
     for(int i=0; i< apps->size();i++){
         Application* app= apps->at(i);
-       // qDebug() << "apps(" << i<<") app->mName="<<app->name()<<",pkgName="<<app->pkgName()<<"app->app_icon="<<app->icon();
+        // qDebug() << "apps(" << i<<") app->mName="<<app->name()<<",pkgName="<<app->pkgName()<<"app->app_icon="<<app->icon();
         mApplications.append(new Application(app->name(), app->pkgName(),app->argv(),app->icon(),app->exitCallback()));
         emit addedApplicationToGrid(app->name(), app->pkgName(),app->argv(),app->icon(),app->exitCallback());
     }
@@ -202,16 +258,17 @@ void ApplicationManager::emitRemoveApplication(const QString &pkgName)
 }
 
 void ApplicationManager::processFinished(int, QProcess::ExitStatus){
-      qDebug() << "processFinished" << endl;
-      emit  launcherApplicationState(false);
-      processExitCallback();
+    qDebug() << "processFinished" << endl;
+    emit  launcherApplicationState(false);
+    processExitCallback();
 }
 
 void ApplicationManager::processError(QProcess::ProcessError){
     qDebug() << "processError" << endl;
-     emit  launcherApplicationState(false);
+    emit  launcherApplicationState(false);
     processExitCallback();
 }
+
 void ApplicationManager::processExitCallback()
 {
     qDebug() << "processExitCallback" << endl;

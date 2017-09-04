@@ -2,6 +2,7 @@
 #define APPLICATIONMANAGER
 #include <QProcess>
 #include <QAbstractListModel>
+#include "ueventthread.h"
 
 class ApplicationManager : public QAbstractListModel
 {
@@ -37,7 +38,8 @@ public slots:
     void addApplication(const QString &name, const QString &pkgName,const QString &argv,const QString &icon,const QString &exitCallback);
     void removeApplication(const QString &pkgName);
     void processExitCallback();
-
+private slots:
+    void slot_onReverseTriggerStateChanged(bool triggered);
 protected:
     QHash<int, QByteArray> roleNames() const;
 
@@ -54,11 +56,21 @@ private:
     QStringList mSections;
     QList<int> mSectionsPositions;
 
+    void init();
+    void initConnection();
 private:
     QProcess* pro;
+    /* Uevent thread for listening car-reverse event.
+       Note: it will start cvbsView application If getted gpio state with 'on'
+       from uevent message and close cvbsView application with gpio state 'over' */
+    UeventThread *m_ueventThread;
+    QProcess *cvbsViewPro;
 private slots:
     void processFinished(int, QProcess::ExitStatus);
     void processError(QProcess::ProcessError);
+
+    void enableChildProcess();
+    void disableChildProcess();
 };
 
 #endif

@@ -265,8 +265,16 @@ void ApplicationManager::processFinished(int, QProcess::ExitStatus){
 
 void ApplicationManager::processError(QProcess::ProcessError){
     qDebug() << "processError" << endl;
+#ifdef PLATFORM_WAYLAND
     emit  launcherApplicationState(false);
     processExitCallback();
+#else
+    QStringList arguments;
+    arguments <<"-platform"<<"EGLFS";
+    qApp->closeAllWindows();
+    QProcess::startDetached(qApp->applicationFilePath(), arguments);
+    qApp->quit();
+#endif
 }
 
 void ApplicationManager::processExitCallback()

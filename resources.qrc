@@ -8,6 +8,8 @@
         <file>qml/theme/ApplicationTile.qml</file>
         <file>qml/theme/ThemeLandscape.qml</file>
         <file>qml/theme/ThemePortrait.qml</file>
+        <file>qml/app_loading.qml</file>
+        <file>qml/BusyIndicator.qml</file>
     </qresource>
     <qresource prefix="/images">
         <file alias="background">resources/images/background.jpg</file>

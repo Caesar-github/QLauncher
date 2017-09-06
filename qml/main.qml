@@ -16,6 +16,9 @@ ApplicationWindow {
 
     property bool activeScreen: Qt.application.state === Qt.ApplicationActive
 
+    property string launchingAppIcon
+    property string launchingAppName
+
     function updatePortraitMode() {
         if (height >= width)
             Config.Theme.portrait = true
@@ -83,11 +86,12 @@ ApplicationWindow {
             console.debug("onLauncherApplicationState state:"+state);
             if(state)
             {
-                applicationWindow.setVisible(false)
-            }
-            else
+                //applicationWindow.setVisible(false)
+                loaderMainTheme.source="app_loading.qml"
+            }else
             {
-                applicationWindow.setVisible(true)
+                loaderMainTheme.source=Config.Theme.portrait?"theme/ThemePortrait.qml":"theme/ThemeLandscape.qml"
+                //applicationWindow.setVisible(true)
             }
         }
     }

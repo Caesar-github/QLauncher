@@ -53,6 +53,7 @@ void ApplicationManager::slot_onReverseTriggerStateChanged(bool triggered)
     }else{
         qDebug("Close cvbsView application.");
         cvbsViewPro->terminate();
+        cvbsViewPro->waitForFinished();
         enableChildProcess();
     }
 }

@@ -42,6 +42,7 @@ void ApplicationManager::initConnection()
 
     connect(m_ueventThread,SIGNAL(reverseTriggerStateChanged(bool)),this,SLOT(slot_onReverseTriggerStateChanged(bool)));
     connect(cvbsViewPro,SIGNAL(finished(int)),this,SLOT(enableChildProcess()));
+    connect(cvbsViewPro,SIGNAL(error(QProcess::ProcessError)),this,SLOT(processError(QProcess::ProcessError)));
 }
 
 void ApplicationManager::slot_onReverseTriggerStateChanged(bool triggered)
@@ -266,15 +267,22 @@ void ApplicationManager::processFinished(int, QProcess::ExitStatus){
 
 void ApplicationManager::processError(QProcess::ProcessError){
     qDebug() << "processError" << endl;
+
 #ifdef PLATFORM_WAYLAND
     emit  launcherApplicationState(false);
     processExitCallback();
 #else
-    QStringList arguments;
-    arguments <<"-platform"<<"EGLFS";
-    qApp->closeAllWindows();
-    QProcess::startDetached(qApp->applicationFilePath(), arguments);
-    qApp->quit();
+    if(pro->state() == QProcess::Running) {
+	qDebug("Current program: %s",qPrintable(pro->program()));
+	pro->terminate();
+	pro->waitForFinished();
+    } else {
+	qApp->closeAllWindows();
+	QStringList arguments;
+	arguments <<"-platform"<<"EGLFS";
+	QProcess::startDetached(qApp->applicationFilePath(), arguments);
+	qApp->quit();
+    }
 #endif
 }
 

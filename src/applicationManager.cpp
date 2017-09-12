@@ -42,7 +42,7 @@ void ApplicationManager::initConnection()
 
     connect(m_ueventThread,SIGNAL(reverseTriggerStateChanged(bool)),this,SLOT(slot_onReverseTriggerStateChanged(bool)));
     connect(cvbsViewPro,SIGNAL(finished(int)),this,SLOT(enableChildProcess()));
-    connect(cvbsViewPro,SIGNAL(error(QProcess::ProcessError)),this,SLOT(processError(QProcess::ProcessError)));
+    connect(cvbsViewPro,SIGNAL(error(QProcess::ProcessError)),this,SLOT(cvbsViewProcessError(QProcess::ProcessError)));
 }
 
 void ApplicationManager::slot_onReverseTriggerStateChanged(bool triggered)
@@ -272,18 +272,27 @@ void ApplicationManager::processError(QProcess::ProcessError){
     emit  launcherApplicationState(false);
     processExitCallback();
 #else
-    if(pro->state() == QProcess::Running) {
-	qDebug("Current program: %s",qPrintable(pro->program()));
-	pro->terminate();
-	pro->waitForFinished();
-    } else {
-	qApp->closeAllWindows();
-	QStringList arguments;
-	arguments <<"-platform"<<"EGLFS";
-	QProcess::startDetached(qApp->applicationFilePath(), arguments);
-	qApp->quit();
-    }
+    qApp->closeAllWindows();
+    QStringList arguments;
+    arguments <<"-platform"<<"EGLFS";
+    QProcess::startDetached(qApp->applicationFilePath(), arguments);
+    qApp->quit();
 #endif
+}
+
+void ApplicationManager::cvbsViewProcessError(QProcess::ProcessError)
+{
+    qDebug() << "cvbsView processError" << endl;
+    if(pro->state() == QProcess::Running) {
+        qDebug("Current program: %s",qPrintable(pro->program()));
+        pro->terminate();
+        pro->waitForFinished();
+    }
+    //qApp->closeAllWindows();
+    //QStringList arguments;
+    //arguments <<"-platform"<<"EGLFS";
+    //QProcess::startDetached(qApp->applicationFilePath(), arguments);
+    //qApp->quit();
 }
 
 void ApplicationManager::processExitCallback()

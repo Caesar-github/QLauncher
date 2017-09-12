@@ -68,6 +68,7 @@ private:
 private slots:
     void processFinished(int, QProcess::ExitStatus);
     void processError(QProcess::ProcessError);
+    void cvbsViewProcessError(QProcess::ProcessError);
 
     void enableChildProcess();
     void disableChildProcess();

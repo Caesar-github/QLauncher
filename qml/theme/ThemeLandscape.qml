@@ -13,7 +13,8 @@ FocusScope {
             source: "qrc:/images/background"
             width: applicationWindow.width
             sourceSize.width:applicationWindow.width
-            //height: applicationWindow.height
+            sourceSize.height:applicationWindow.height
+            height: applicationWindow.height
         }
     property int navbarMargin: QL.DisplayConfig.navBarVisible ? QL.DisplayConfig.navigationBarHeight : 0
     property int statusbarMargin: QL.DisplayConfig.statusBarHeight
@@ -62,8 +63,8 @@ FocusScope {
         clip: true
         interactive: visible
 
-        cellHeight: height / Config.Theme.getColumns()
-        cellWidth: width / Config.Theme.getRows()
+        cellHeight: background.height / Config.Theme.getColumns()
+        cellWidth: background.width / Config.Theme.getRows()
 
         model: listModelDesktop
 

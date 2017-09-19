@@ -8,6 +8,7 @@ class Application : public QObject
     Q_OBJECT
 
     Q_PROPERTY(QString name READ name NOTIFY nameChanged)
+     Q_PROPERTY(QString ui_name READ ui_name NOTIFY uiNameChanged)
     Q_PROPERTY(QString pkgName READ pkgName NOTIFY pkgNameChanged)
     Q_PROPERTY(QString argv READ argv NOTIFY argvChanged)
     Q_PROPERTY(QString icon READ icon NOTIFY iconChanged)
@@ -17,10 +18,14 @@ public:
     explicit Application(QObject *parent = 0);
     Application(const QString &name, const QString &pkgName, QObject *parent = 0);
    // Application(const QString &name, const QString &pkgName,const QString &icon, QObject *parent = 0);
-     Application(const QString &name, const QString &pkgName, const QString & argv,const QString &icon,const QString exitCallback, QObject *parent = 0);
+     Application(const QString &name, const QString &pkgName, const QString &ui_name,const QString & argv,const QString &icon,const QString exitCallback, QObject *parent = 0);
 
     QString name() const;
     void setName(const QString &name);
+
+    QString ui_name() const;
+    void setUiName(const QString &ui_name);
+
 
     QString pkgName() const;
     void setApplicationName(const QString &pkgName);
@@ -37,6 +42,7 @@ public:
 signals:
     void nameChanged();
     void pkgNameChanged();
+    void uiNameChanged();
     void argvChanged();
     void iconChanged();
     void exitCallbackChanged();
@@ -44,6 +50,7 @@ signals:
 private:
     QString mName;
     QString mApplicationName;
+    QString mUiName;
     QString mArgv;
     QString mIcon;
     QString mExitCallback;

@@ -73,12 +73,12 @@ FocusScope {
             width: GridView.view.cellWidth
 
             source: "file:/usr/local/"+model.name+"/"+model.icon
-            text: model.name
+            text:  model.ui_name === "" ? model.name:model.ui_name
 
             onClicked:
             {
                 //console.debug("ThemeMain:onClicked "+model.name+",model.pkgName="+model.pkgName);
-                QL.ApplicationManager.launchApplication(model.name,model.pkgName,model.argv,model.exitCallback)
+                QL.ApplicationManager.launchApplication(model.name,model.pkgName,model.ui_name,model.argv,model.exitCallback)
             }
             onPressAndHold: root.pressAndHold(model, x, y)
         }

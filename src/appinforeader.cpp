@@ -32,11 +32,17 @@ Application* AppInfoReader::fromJsonObject(QByteArray byteArray){
             return appInfo;
         }
         jsonObject=document.object();
+        if(jsonObject.contains("ui_name"))
+        {
+            QJsonValue ui_name= jsonObject.take("ui_name");
+            appInfo->setUiName(ui_name.toString(""));
+        }
         if(jsonObject.contains("app_name"))
         {
             QJsonValue app_name= jsonObject.take("app_name");
             appInfo->setName(app_name.toString(""));
         }
+
         if(jsonObject.contains("app_icon"))
         {
             QJsonValue app_icon= jsonObject.take("app_icon");
@@ -92,6 +98,11 @@ QList<Application*>* AppInfoReader::loadFromJsonArray(QByteArray byteArray)
 }
 Application* AppInfoReader::loadFromJsonObject(QJsonObject &jsonObject){
     Application* appInfo=new Application();
+    if(jsonObject.contains("ui_name"))
+    {
+        QJsonValue ui_name= jsonObject.take("ui_name");
+        appInfo->setUiName(ui_name.toString(""));
+    }
     if(jsonObject.contains("app_name"))
     {
         QJsonValue app_name= jsonObject.take("app_name");

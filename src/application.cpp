@@ -13,14 +13,28 @@ Application::Application(QObject *parent) :
 {
 }*/
 
-Application::Application(const QString &name, const QString &pkgName, const QString &argv,const QString &icon, const QString exitCallback,QObject *parent) :
+Application::Application(const QString &name, const QString &pkgName,const QString &ui_name, const QString &argv,const QString &icon, const QString exitCallback,QObject *parent) :
     QObject(parent),
     mName(name),
     mApplicationName(pkgName),
+    mUiName(ui_name),
     mArgv(argv),
     mIcon(icon),
     mExitCallback(exitCallback)
 {
+}
+QString Application::ui_name() const
+{
+    return mUiName;
+}
+
+void Application::setUiName(const QString &ui_name)
+{
+    if (mUiName == ui_name)
+        return;
+
+    mUiName = ui_name;
+    emit uiNameChanged();
 }
 
 QString Application::name() const

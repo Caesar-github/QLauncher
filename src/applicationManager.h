@@ -72,6 +72,8 @@ private slots:
 
     void enableChildProcess();
     void disableChildProcess();
+    int  getOomAdj(Q_PID pid);
+    bool setOomAdj(Q_PID pid,int oom_adj);
 };
 
 #endif

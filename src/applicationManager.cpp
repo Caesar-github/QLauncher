@@ -34,7 +34,7 @@ void ApplicationManager::init()
 
 void ApplicationManager::initConnection()
 {
-    connect(this, SIGNAL(newApplicationDetected(QString, QString,QString,QString,QString)), this, SLOT(addApplication(QString, QString,QString,QString,QString)));
+    connect(this, SIGNAL(newApplicationDetected(QString, QString,QString,QString,QString,QString)), this, SLOT(addApplication(QString,QString,QString,QString,QString,QString)));
     connect(this, SIGNAL(removedApplication(QString)), this, SLOT(removeApplication(QString)));
 
     connect(pro, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(processFinished(int, QProcess::ExitStatus)));
@@ -151,6 +151,8 @@ void ApplicationManager::launchApplication(const QString &application,const QStr
     {
         pro->start("/usr/local/"+application+"/"+pkgName);
     }
+    setOomAdj(pro->pid(),2);
+    //getOomAdj(pro->pid());
     emit  launcherApplicationState(true);
 #endif
 
@@ -306,4 +308,48 @@ void ApplicationManager::processExitCallback()
         QProcess::execute("/usr/local/"+pro_path+"/"+exit_work);
     }
 }
+
+int  ApplicationManager::getOomAdj(Q_PID pid)
+{
+    char path[20];
+    sprintf(path,"/proc/%d/oom_adj",pid);
+    //qDebug() <<"path="<<path;
+    int oom=-1000;
+    QFile file(path);
+     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+     {
+         qDebug()<<"getOomAdj:Can't open the file!"<<endl;
+         return -1000;
+     }
+
+     QTextStream in(&file);
+     QString line = in.readLine();
+     while (!line.isNull()) {
+         line = in.readLine();
+     }
+     oom=line.toInt();
+     qDebug()<<"getOomAdj oom_adj="<<oom;
+     file.close();
+
+    return oom;
+
+}
+
+bool ApplicationManager::setOomAdj(Q_PID pid,int oom_adj)
+{
+    char path[20];
+    sprintf(path,"/proc/%d/oom_adj",pid);
+    qDebug() <<"setOomAdj:write "<<QString("%1").arg(oom_adj)<<":"<<path;
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        qDebug()<<"setOomAdj:Can't open the file!"<<endl;
+        return false;
+    }
+    QTextStream out(&file);
+    out <<QString("%1").arg(oom_adj);
+    file.close();
+    return true;
+}
+
 

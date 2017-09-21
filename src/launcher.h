@@ -9,7 +9,7 @@ class Launcher : public QObject
 public:
     explicit Launcher(QObject *parent = 0);
 
-    Q_INVOKABLE void pickWallpaper();
+    Q_INVOKABLE void pickWallpaper(QString path);
     Q_INVOKABLE void emitNewIntent();
     Q_INVOKABLE void registerMethods();
     Q_INVOKABLE void minimize();

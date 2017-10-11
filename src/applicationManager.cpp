@@ -21,6 +21,10 @@ void ApplicationManager::init()
     m_ueventThread = new UeventThread();
     m_ueventThread->start();
 
+    FileData *fileData=(FileData*)malloc(sizeof(FileData));
+    m_mediaMonitor.addFile(fileData);
+    m_mediaMonitor.listen();
+    connect(m_ueventThread,SIGNAL(ueventDeviceChange(int)),&m_mediaMonitor,SLOT(relisten(int)));
     // Define for control life cycle of cvbsView Application
     cvbsViewPro = new QProcess(this);
 #ifdef PLATFORM_WAYLAND

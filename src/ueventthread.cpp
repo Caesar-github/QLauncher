@@ -100,4 +100,27 @@ void UeventThread::parse_event(const char *msg, struct luther_gliethttp *luther_
             emit reverseTriggerStateChanged(false);
         }
     }
+
+    QRegExp regExp;
+    regExp.setPatternSyntax(QRegExp::RegExp);
+    regExp.setCaseSensitivity(Qt::CaseSensitive);
+    regExp.setPattern("sd[a-z]");
+
+    QRegExp regExp2;
+    regExp2.setPatternSyntax(QRegExp::RegExp);
+    regExp2.setCaseSensitivity(Qt::CaseSensitive);
+    regExp2.setPattern("mmcblk");
+
+
+    if(strcmp(luther_gliethttp->action,"remove")==0 &&regExp.indexIn(QString(luther_gliethttp->devPath))>=0||
+            strcmp(luther_gliethttp->action,"remove")==0 &&regExp2.indexIn(QString(luther_gliethttp->devPath))>=0||
+            (strcmp(luther_gliethttp->action,"add")==0&&regExp.indexIn(QString(luther_gliethttp->devPath))>=0) ||
+            (strcmp(luther_gliethttp->action,"add")==0&&regExp2.indexIn(QString(luther_gliethttp->devPath))>=0)){
+        printf("event{'%s','%s'}\n",
+               luther_gliethttp->action, luther_gliethttp->devPath);
+
+        emit ueventDeviceChange(strcmp(luther_gliethttp->action,"add")==0);
+        qDebug()<<"mmcblk or sd "<<luther_gliethttp->action<<"|" <<luther_gliethttp->devPath;
+
+    }
 }

@@ -22,6 +22,7 @@ protected:
     void run();
 signals:
     void reverseTriggerStateChanged(bool triggered);
+    void ueventDeviceChange(int);
 };
 
 #endif // UEVENTTHREAD_H

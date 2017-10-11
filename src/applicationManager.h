@@ -3,6 +3,7 @@
 #include <QProcess>
 #include <QAbstractListModel>
 #include "ueventthread.h"
+#include "mediaMonitor/MediaMonitor.h"
 
 class ApplicationManager : public QAbstractListModel
 {
@@ -65,6 +66,8 @@ private:
        from uevent message and close cvbsView application with gpio state 'over' */
     UeventThread *m_ueventThread;
     QProcess *cvbsViewPro;
+
+    MediaMonitor m_mediaMonitor;
 private slots:
     void processFinished(int, QProcess::ExitStatus);
     void processError(QProcess::ProcessError);

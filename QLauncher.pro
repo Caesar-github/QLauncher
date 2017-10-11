@@ -6,14 +6,19 @@ TEMPLATE = app
 
 TARGET = QLauncher
 
-QT += qml widgets
+QT += qml widgets network
 
 QML_IMPORT_PATH = $$PWD/qml
 
 HEADERS += $$files($$PWD/src/*.h) \
-           src/powerManager/PowerManager.h
+           src/powerManager/PowerManager.h \
+    src/mediaMonitor/MediaNotification.h \
+    src/mediaMonitor/MediaNotificationSender.h \
+    src/mediaMonitor/MediaMonitor.h
 SOURCES += $$files($$PWD/src/*.cpp) \
-           src/powerManager/PowerManager.cpp
+           src/powerManager/PowerManager.cpp \
+    src/mediaMonitor/MediaNotificationSender.cpp \
+    src/mediaMonitor/MediaMonitor.cpp
 
 RESOURCES += resources.qrc
 

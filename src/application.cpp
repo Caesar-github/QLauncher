@@ -104,3 +104,12 @@ void Application::setExitCallback(const QString &exitCallback)
     mExitCallback = exitCallback;
     emit exitCallbackChanged();
 }
+
+QString Application::i18n() const{
+    return mI18n;
+}
+void Application::seti18n(const QString &i18n){
+    if (mI18n == i18n)
+        return;
+    mI18n = i18n;
+}

@@ -5,6 +5,8 @@
 #include <QSettings>
 #include <QApplication>
 #include "appscanner.h"
+#include "appi18n.h"
+#include "applicationmodel.h"
 
 #define MSG_DISABLE_APPLICATION "APP_DISABLE\n"
 #define MSG_ENABLE_APPLICATION "APP_ENABLE\n"
@@ -184,6 +186,7 @@ void ApplicationManager::retrievePackages()
         // qDebug() << "apps(" << i<<") app->mName="<<app->name()<<",pkgName="<<app->pkgName()<<"app->app_icon="<<app->icon();
         mApplications.append(new Application(app->name(), app->pkgName(),app->ui_name(),app->argv(),app->icon(),app->exitCallback()));
         emit addedApplicationToGrid(app->name(), app->pkgName(),app->ui_name(),app->argv(),app->icon(),app->exitCallback());
+        emit ApplicationModel::s_model->onApplicationInsert(app);
     }
     delete appScanner;
     endResetModel();
@@ -269,6 +272,7 @@ void ApplicationManager::processFinished(int, QProcess::ExitStatus){
     qDebug() << "processFinished" << endl;
     emit  launcherApplicationState(false);
     processExitCallback();
+    AppI18n::instance()->reflush();
 }
 
 void ApplicationManager::processError(QProcess::ProcessError){
@@ -355,5 +359,3 @@ bool ApplicationManager::setOomAdj(Q_PID pid,int oom_adj)
     file.close();
     return true;
 }
-
-

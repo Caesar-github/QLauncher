@@ -114,7 +114,7 @@ FocusScope {
         cellHeight: background.height / Config.Theme.getColumns()
         cellWidth: background.width / Config.Theme.getRows()
 
-        model: listModelDesktop
+        model: app_model
 
         delegate: ApplicationTile {
             id: applicationTile
@@ -133,6 +133,7 @@ FocusScope {
                 QL.ApplicationManager.launchApplication(model.name,model.pkgName,model.ui_name,model.argv,model.exitCallback)
             }
             onPressAndHold: root.pressAndHold(model, x, y)
+
         }
 
         onHeightChanged: {

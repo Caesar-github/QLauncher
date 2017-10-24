@@ -112,7 +112,7 @@ FocusScope {
         cellHeight: height / Config.Theme.getColumns()
         cellWidth: width / Config.Theme.getRows()
 
-        model: listModelDesktop
+        model: app_model
 
         delegate: ApplicationTile {
             id: applicationTile

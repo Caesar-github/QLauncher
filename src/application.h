@@ -39,6 +39,9 @@ public:
     QString exitCallback() const;
     void setExitCallback(const QString &exitCallback);
 
+    QString i18n() const;
+    void seti18n(const QString &i18n);
+
 signals:
     void nameChanged();
     void pkgNameChanged();
@@ -54,6 +57,7 @@ private:
     QString mArgv;
     QString mIcon;
     QString mExitCallback;
+    QString mI18n;
 public:
     QString app_file;
     QString dir;

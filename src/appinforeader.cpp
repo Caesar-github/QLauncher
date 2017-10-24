@@ -4,6 +4,8 @@
 #include <QJsonObject>
 #include <QFile>
 #include <QDebug>
+#include "appi18n.h"
+
 AppInfoReader::AppInfoReader()
 {
 
@@ -64,6 +66,11 @@ Application* AppInfoReader::fromJsonObject(QByteArray byteArray){
         {
             QJsonValue exit_callback= jsonObject.take("exit_callback");
             appInfo->setExitCallback(exit_callback.toString(""));
+        }
+        if(jsonObject.contains("i18n"))
+        {
+            QJsonValue i18n= jsonObject.take("i18n");
+            appInfo->seti18n(i18n.toString());
         }
         return appInfo;
     }

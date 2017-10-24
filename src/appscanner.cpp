@@ -4,6 +4,10 @@
 #include <QFile>
 #include "appinforeader.h"
 #include <QDebug>
+#include "appi18n.h"
+#include <QSettings>
+#include <QTextCodec>
+
 AppScanner::AppScanner()
 {
 
@@ -39,7 +43,16 @@ QList<Application*>* AppScanner::scan(QString dir_path){
                 AppInfoReader reader;
                 Application* app= reader.fromJsonObject(byteArray);
                 app->dir=fileInfo.dir().absolutePath();
-                apps->append(app);            
+                apps->append(app);
+
+                QString i18nfilePath = fileInfo.dir().absoluteFilePath(app->i18n());
+                QFile i18nfile(i18nfilePath);
+                if(i18nfile.exists()){
+                    //qDebug()<<"Found i18n Setting :"<<i18nfilePath;
+                    QSettings *setting=new QSettings(i18nfilePath,QSettings::IniFormat);
+                    setting->setIniCodec(QTextCodec::codecForName("UTF-8"));
+                    AppI18n::instance()->addApplication(app,setting);
+                }
         }
 
      }

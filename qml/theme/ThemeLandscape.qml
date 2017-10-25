@@ -128,7 +128,7 @@ FocusScope {
             onClicked:
             {
                 applicationWindow.launchingAppIcon="file:/usr/local/"+model.name+"/"+model.icon
-                applicationWindow.launchingAppName=model.name
+                applicationWindow.launchingAppName=model.ui_name === "" ? model.name:model.ui_name
                 //console.debug("ThemeMain:onClicked "+model.name+",model.exitCallback="+model.exitCallback);
                 QL.ApplicationManager.launchApplication(model.name,model.pkgName,model.ui_name,model.argv,model.exitCallback)
             }

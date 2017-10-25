@@ -14,7 +14,7 @@ UeventThread::UeventThread(QObject *parent):QThread(parent)
 {
 }
 
-UeventThread::~UeventThread()
+void UeventThread::stopThread()
 {
     requestInterruption();
     terminate();

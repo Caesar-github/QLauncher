@@ -15,8 +15,9 @@ class MonitorThread:public QThread
     Q_OBJECT
 public:
     MonitorThread(QObject *parent=0);
-    ~MonitorThread();
+    ~MonitorThread(){}
     void setMediaNotificationSender(MediaNotificationSender*);
+    void stopThread();
 protected:
     MediaNotificationSender* m_sender;
     void run();
@@ -30,7 +31,9 @@ class MediaMonitor:public QThread
     Q_OBJECT
 public:
     MediaMonitor();
-    virtual ~MediaMonitor();
+    virtual ~MediaMonitor(){}
+
+    void stopThread();
     MediaNotificationSender *m_MediaNotificationSender;
 
     void addFile(FileData* file);

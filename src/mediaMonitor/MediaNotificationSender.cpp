@@ -10,13 +10,9 @@
 
 #include <QtConcurrent/QtConcurrent>
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-
-#include <stdio.h>
-#include <stdlib.h>
 #include <errno.h>
 #include <string.h>
 #include <sys/types.h>
@@ -24,16 +20,15 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 
-
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <netinet/tcp.h>
+#include <unistd.h>
 
 MediaNotificationSender::MediaNotificationSender(){
-
-    QtConcurrent::run(this,&MediaNotificationSender::wait);
-
+    isTermimalCalled = false;
+    QtConcurrent::run(this ,&MediaNotificationSender::wait);
 }
 
 
@@ -42,11 +37,19 @@ MediaNotificationSender::~MediaNotificationSender(){
     qDebug()<<"~MediaNotificationSender()";
 }
 
+void MediaNotificationSender::closeSocket()
+{
+    shutdown(sockfd, SHUT_RDWR);
+    close(sockfd);
+    isTermimalCalled = true;
+}
+
 void MediaNotificationSender::wait(){
-    int sockfd,new_fd;
+    int new_fd;
     struct sockaddr_in my_addr;
     struct sockaddr_in their_addr;
     socklen_t sin_size;
+    int flag = 1, len = sizeof(int);
 
     //建立TCP套接口
     //AF_INET: Internet IP Protocol
@@ -68,6 +71,8 @@ void MediaNotificationSender::wait(){
     //#define sin_zero __pad
     bzero(&(my_addr.sin_zero),8);
 
+    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &flag, len);
+
     ////绑定套接口
     if(bind(sockfd,(struct sockaddr *)&my_addr,sizeof(struct sockaddr))==-1)
     {
@@ -83,8 +88,9 @@ void MediaNotificationSender::wait(){
         return;
     }
 
+    qDebug("------reuse !!accpet start----------");
     ////等待连接
-    while(1)
+    while(!isTermimalCalled)
     {
         sin_size = sizeof(struct sockaddr); //either sockaddr or sockaddr_in can work normally
 
@@ -103,7 +109,6 @@ void MediaNotificationSender::wait(){
         mutex.unlock();
 
     }
-
 }
 
 void MediaNotificationSender::sendNotification(MediaNotification *notification){

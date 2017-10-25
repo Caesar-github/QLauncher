@@ -196,8 +196,6 @@ void ApplicationManager::retrievePackages()
 void ApplicationManager::registerBroadcast()
 {
     retrievePackages();
-
-
 }
 
 int ApplicationManager::indexOfSection(const QString &section)
@@ -282,11 +280,16 @@ void ApplicationManager::processError(QProcess::ProcessError){
     emit  launcherApplicationState(false);
     processExitCallback();
 #else
+    // stop thread before restart application.
+    m_mediaMonitor.stopThread();
+    m_ueventThread->stopThread();
     qApp->closeAllWindows();
+
     QStringList arguments;
     arguments <<"-platform"<<"EGLFS";
     QProcess::startDetached(qApp->applicationFilePath(), arguments);
-    qApp->quit();
+
+    qApp->exit(0);
 #endif
 }
 
@@ -298,6 +301,7 @@ void ApplicationManager::cvbsViewProcessError(QProcess::ProcessError)
         pro->terminate();
         pro->waitForFinished();
     }
+
     //qApp->closeAllWindows();
     //QStringList arguments;
     //arguments <<"-platform"<<"EGLFS";
@@ -324,20 +328,20 @@ int  ApplicationManager::getOomAdj(Q_PID pid)
     //qDebug() <<"path="<<path;
     int oom=-1000;
     QFile file(path);
-     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-     {
-         qDebug()<<"getOomAdj:Can't open the file!"<<endl;
-         return -1000;
-     }
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        qDebug()<<"getOomAdj:Can't open the file!"<<endl;
+        return -1000;
+    }
 
-     QTextStream in(&file);
-     QString line = in.readLine();
-     while (!line.isNull()) {
-         line = in.readLine();
-     }
-     oom=line.toInt();
-     qDebug()<<"getOomAdj oom_adj="<<oom;
-     file.close();
+    QTextStream in(&file);
+    QString line = in.readLine();
+    while (!line.isNull()) {
+        line = in.readLine();
+    }
+    oom=line.toInt();
+    qDebug()<<"getOomAdj oom_adj="<<oom;
+    file.close();
 
     return oom;
 

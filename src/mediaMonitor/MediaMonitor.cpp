@@ -60,10 +60,12 @@ MonitorThread::MonitorThread(QObject *parent):QThread(parent){
 
 }
 
-MonitorThread::~MonitorThread(){
-
+void MonitorThread::stopThread(){
+    requestInterruption();
+    terminate();
+    quit();
+    wait();
 }
-
 
 void MonitorThread::setMediaNotificationSender(MediaNotificationSender *sender){
     m_sender=sender;
@@ -136,11 +138,12 @@ MediaMonitor::MediaMonitor(){
 
 
 
-MediaMonitor::~MediaMonitor(){
+void MediaMonitor::stopThread(){
+    m_MediaNotificationSender->closeSocket();
     delete m_MediaNotificationSender;
+
+    m_monitorThread->stopThread();
 }
-
-
 
 
 

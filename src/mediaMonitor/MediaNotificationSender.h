@@ -22,19 +22,25 @@ public:
     MediaNotificationSender();
     virtual ~MediaNotificationSender();
 
+    void closeSocket();
     void wait();
+
 private:
+    bool isTermimalCalled;
     int msgid;
+    int sockfd;
     QTcpServer *m_tcpServer;
     QList<int> m_clientList;
     QMutex mutex;
+
 public:
     void sendNotification(MediaNotification *notification);
+
 signals:
     void sig_sendNotification(MediaNotification *notification);
+
 public slots:
     void newConnect();
-
-
 };
+
 #endif // !defined(EA_9235DDDA_B79F_43fd_B920_764147F36A15__INCLUDED_)

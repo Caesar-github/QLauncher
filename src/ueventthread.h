@@ -15,7 +15,10 @@ class UeventThread:public QThread
     Q_OBJECT
 public:
     UeventThread(QObject *parent=0);
-    ~UeventThread();
+    ~UeventThread(){}
+
+    void stopThread();
+
 private:
     void parse_event(const char *msg, struct luther_gliethttp *luther_gliethttp);
 protected:

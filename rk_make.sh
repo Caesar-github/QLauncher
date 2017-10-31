@@ -5,6 +5,7 @@ APP_DIR_NAME=$(basename $TOP_DIR)
 BUILDROOT_TARGET_PATH=$(pwd)/../../buildroot/output/target/
 TARGET_APP_PATH=$BUILDROOT_TARGET_PATH/usr/local/$APP_DIR_NAME/
 QMAKE=$(pwd)/../../buildroot/output/host/bin/qmake
+STRIP=$(pwd)/../../buildroot/output/host/usr/bin/arm-linux-strip
 PRODUCT_NAME=`ls ../../device/rockchip/`
 TARGET_EXECUTABLE=""
 
@@ -41,6 +42,7 @@ do
 	then
 		TARGET_EXECUTABLE=$(basename "$file")
 		echo "found executable file $TARGET_EXECUTABLE"
+		$STRIP $TOP_DIR/$TARGET_EXECUTABLE
 		cp $TOP_DIR/$TARGET_EXECUTABLE $TARGET_APP_PATH
 		#cp -r $TOP_DIR/resources $TARGET_APP_PATH
 		echo "$TARGET_EXECUTABLE app is ready."

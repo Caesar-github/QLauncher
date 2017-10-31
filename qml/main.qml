@@ -73,6 +73,14 @@ ApplicationWindow {
         source: Config.Theme.portrait?"theme/ThemePortrait.qml":"theme/ThemeLandscape.qml"
     }
 
+    Loader {
+        id:loading
+        anchors.fill: parent
+        focus: false
+        visible: false
+        source: "app_loading.qml"
+    }
+
     Connections {
         target: QL.ApplicationManager
 
@@ -87,10 +95,12 @@ ApplicationWindow {
             if(state)
             {
                 //applicationWindow.setVisible(false)
-                loaderMainTheme.source="app_loading.qml"
+                loading.visible=true;
+                loaderMainTheme.visible=false;
             }else
             {
-                loaderMainTheme.source=Config.Theme.portrait?"theme/ThemePortrait.qml":"theme/ThemeLandscape.qml"
+                loading.visible=false;
+                loaderMainTheme.visible=true;
                 //applicationWindow.setVisible(true)
             }
         }

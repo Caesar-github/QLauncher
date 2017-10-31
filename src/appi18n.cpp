@@ -26,6 +26,7 @@ QString AppI18n::getName(Application* app){
     if(setting!=NULL){
         QSettings* tmp= getSettings();
         QString lang= tmp->value("LANG").toString()+"/appName";
+        delete tmp;
         return setting->value(lang).toString();
     }
 }
@@ -40,6 +41,7 @@ void AppI18n::reflush(){
         QString lang= tmp->value("LANG").toString()+"/appName";
         QString name= iter.value()->value(lang).toString();
         iter.key()->setUiName(name);
+        delete tmp;
     }
 
     emit reflushUI();

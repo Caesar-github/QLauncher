@@ -12,7 +12,9 @@ Item {
             verticalAlignment: Image.AlignTop
             source: "qrc:/images/background"
             width: applicationWindow.width
+	    height: applicationWindow.height
             sourceSize.width:applicationWindow.width
+            sourceSize.height:applicationWindow.height
         }
 
     BusyIndicator {

@@ -9,11 +9,12 @@ FocusScope {
             id: background
             fillMode: Image.PreserveAspectCrop
             smooth: true
-            horizontalAlignment: Image.AlignLeft
             verticalAlignment: Image.AlignTop
             source: wallpaper
             width: applicationWindow.width
+            height: applicationWindow.height
             sourceSize.height:applicationWindow.height
+            sourceSize.width:applicationWindow.width
             onSourceChanged: {
                 console.log("background changed.")
             }
@@ -25,7 +26,6 @@ FocusScope {
                     source = "qrc:/images/background";
                  }
               }
-            height: applicationWindow.height
         }
     property int navbarMargin: QL.DisplayConfig.navBarVisible ? QL.DisplayConfig.navigationBarHeight : 0
     property int statusbarMargin: QL.DisplayConfig.statusBarHeight

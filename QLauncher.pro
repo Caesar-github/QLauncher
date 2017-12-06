@@ -8,6 +8,9 @@ TARGET = QLauncher
 
 QT += qml widgets network
 
+# 3399Linux
+DEFINES += DEVICE_EVB
+
 QML_IMPORT_PATH = $$PWD/qml
 
 HEADERS += $$files($$PWD/src/*.h) \

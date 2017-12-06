@@ -117,8 +117,9 @@ void ApplicationManager::launchApplication(const QString &application,const QStr
     qDebug() << "launchApplication:application=" << application<<",argv="<<argv;
 
     //QStringList arguments;
-    //arguments <<"-platform"<<"EGLFS";
-
+#ifdef DEVICE_EVB
+    arguments <<"-platform"<<"EGLFS"<<"-plugin"<<"EvdevTouch:/dev/input/event0"<<"-plugin"<<"EvdevKeyboard:/dev/input/event1"<<"-plugin"<<"EvdevKeyboard:/dev/input/event2";
+#endif
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
     if(application.compare("video")==0 || application.compare("camera")==0)
     {
@@ -155,7 +156,11 @@ void ApplicationManager::launchApplication(const QString &application,const QStr
     }
     else
     {
-        pro->start("/usr/local/"+application+"/"+pkgName);
+	#ifdef DEVICE_EVB
+		pro->start("/usr/local/"+application+"/"+pkgName,arguments);
+	#else
+		pro->start("/usr/local/"+application+"/"+pkgName);
+	#endif
     }
     setOomAdj(pro->pid(),2);
     //getOomAdj(pro->pid());

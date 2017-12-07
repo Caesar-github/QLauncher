@@ -106,6 +106,17 @@ void MediaNotificationSender::wait(){
         mutex.lock();
 
         m_clientList.append(new_fd);
+	QList<int>::const_iterator iterator;
+	for (iterator=m_clientList.constBegin(); iterator!=m_clientList.constEnd(); ++iterator) {
+		struct tcp_info info;
+		int len=sizeof(info);
+		getsockopt(*iterator, IPPROTO_TCP, TCP_INFO, &info, (socklen_t *)&len);
+		if((info.tcpi_state != TCP_ESTABLISHED)){
+			close(*iterator);
+			m_clientList.removeOne(*iterator);
+			printf("close unuse accept socket fd.\n");
+		}
+	}
         mutex.unlock();
 
     }
@@ -131,6 +142,7 @@ void MediaNotificationSender::sendNotification(MediaNotification *notification){
                 perror("send");
             }
         }else{
+	    close(*iterator);
             m_clientList.removeOne(*iterator);
         }
 

@@ -7,10 +7,19 @@ TARGET_APP_PATH=$BUILDROOT_TARGET_PATH/usr/local/$APP_DIR_NAME/
 QMAKE=$(pwd)/../../buildroot/output/host/bin/qmake
 STRIP=$(pwd)/../../buildroot/output/host/usr/bin/arm-linux-strip
 PRODUCT_NAME=`ls ../../device/rockchip/`
+package_config=$(pwd)/../../device/rockchip/$PRODUCT_NAME/package_config.sh
 TARGET_EXECUTABLE=""
 
 if [ "$PRODUCT_NAME"x = "px3-se"x ];then
-sed -i '/DEVICE_EVB/s/^/#&/' $QT_PROJECT_FILE 
+sed -i '/DEVICE_EVB/s/^/#&/' $QT_PROJECT_FILE
+fi
+
+if [ -f $package_config ];then
+     source $package_config
+     if [[ "$PLATFORM_WAYLAND"x == "no"x ]];then
+	 echo "build Qluancher with EGLFS support"
+	 sed -i '/PLATFORM_WAYLAND/s/^/#&/' $QT_PROJECT_FILE
+    fi
 fi
 
 #get parameter for "-j2~8 and clean"
@@ -60,5 +69,11 @@ fi
 
 #we should restore the modifcation which is made on this script above.
 if [ "$PRODUCT_NAME"x = "px3-se"x ];then
-sed -i '/DEVICE_EVB/s/^.//' $QT_PROJECT_FILE 
+sed -i '/DEVICE_EVB/s/^.//' $QT_PROJECT_FILE
+fi
+
+if [ -f $package_config ];then
+     if [[ "$PLATFORM_WAYLAND"x == "no"x ]];then
+         sed -i '/PLATFORM_WAYLAND/s/^.//' $QT_PROJECT_FILE
+    fi
 fi

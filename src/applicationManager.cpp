@@ -118,7 +118,7 @@ void ApplicationManager::launchApplication(const QString &application,const QStr
 
     //QStringList arguments;
 #ifdef DEVICE_EVB
-    arguments <<"-platform"<<"EGLFS"<<"-plugin"<<"EvdevTouch:/dev/input/event0"<<"-plugin"<<"EvdevKeyboard:/dev/input/event1"<<"-plugin"<<"EvdevKeyboard:/dev/input/event2";
+    arguments <<"-platform"<<"EGLFS"<<"-plugin"<<"EvdevTouch"<<"-plugin"<<"EvdevKeyboard";
 #endif
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
     if(application.compare("video")==0 || application.compare("camera")==0)
@@ -294,7 +294,11 @@ void ApplicationManager::processError(QProcess::ProcessError){
     qApp->closeAllWindows();
 
     QStringList arguments;
+#ifdef DEVICE_EVB
+    arguments <<"-platform"<<"EGLFS"<<"-plugin"<<"EvdevTouch"<<"-plugin"<<"EvdevKeyboard";
+#else
     arguments <<"-platform"<<"EGLFS";
+#endif
     QProcess::startDetached(qApp->applicationFilePath(), arguments);
 
     qApp->exit(0);

@@ -275,6 +275,7 @@ void ApplicationManager::processFinished(int, QProcess::ExitStatus){
     qDebug() << "processFinished" << endl;
     emit  launcherApplicationState(false);
     processExitCallback();
+    pro->close();
     AppI18n::instance()->reflush();
 }
 
@@ -284,10 +285,12 @@ void ApplicationManager::processError(QProcess::ProcessError){
 #ifdef PLATFORM_WAYLAND
     emit  launcherApplicationState(false);
     processExitCallback();
+    pro->close();
 #else
     // stop thread before restart application.
     m_mediaMonitor.stopThread();
     m_ueventThread->stopThread();
+    pro->close();
     qApp->closeAllWindows();
 
     QStringList arguments;

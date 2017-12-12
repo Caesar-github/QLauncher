@@ -82,7 +82,7 @@ void MonitorThread::run(){
 
     fd = inotify_init();
     if( fd < 0 ){
-        fprintf(stderr, "inotify_init failed\n");
+        qDebug("inotify_init failed\n");
         return;
     }
 
@@ -104,7 +104,7 @@ void MonitorThread::run(){
             for(i=0; i<EVENT_NUM; i++){
                 if((event->mask >> i) & 1){
                     if(event->len > 0){
-                        fprintf(stdout, "%s --- %s\n", event->name, event_str[i]);
+                        qDebug("%s --- %s\n", event->name, event_str[i]);
                         if(m_sender){
                             MediaNotification notification;
                             if(strcmp(event_str[i],"IN_CREATE")==0){

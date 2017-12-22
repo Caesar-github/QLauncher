@@ -47,6 +47,31 @@ Item {
             //Layout.preferredWidth: Math.round(72 * DisplayConfig.dp)
 
             fillMode: Image.PreserveAspectFit
+
+            MouseArea {
+            id: mouseArea
+
+            property var originalParent
+
+            anchors.fill: parent
+
+            drag.target: root.dragTarget
+
+            onClicked:
+            {
+            //console.debug("ApplicationTile onClicked");
+            root.clicked() //call ApplicationGrid:onClicked
+
+            }
+
+            onPressAndHold: {
+            var mappedItem = mapToItem(loaderMainTheme, mouse.x, mouse.y)
+            root.pressAndHold(model, mappedItem.x, mappedItem.y)
+            }
+
+            onReleased: root._newParent = (root.Drag.target !== null ? root.Drag.target : root._originalParent)
+
+            }
         }
 
         Label {
@@ -65,30 +90,5 @@ Item {
 
             color: "#000000"
         }
-    }
-
-    MouseArea {
-        id: mouseArea
-
-        property var originalParent
-
-        anchors.fill: parent
-
-        drag.target: root.dragTarget
-
-        onClicked:
-        {
-            //console.debug("ApplicationTile onClicked");
-            root.clicked() //call ApplicationGrid:onClicked
-
-        }
-
-        onPressAndHold: {
-            var mappedItem = mapToItem(loaderMainTheme, mouse.x, mouse.y)
-            root.pressAndHold(model, mappedItem.x, mappedItem.y)
-        }
-
-        onReleased: root._newParent = (root.Drag.target !== null ? root.Drag.target : root._originalParent)
-
     }
 }

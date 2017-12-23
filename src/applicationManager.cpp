@@ -111,7 +111,7 @@ void ApplicationManager::launchApplication(const QString &application,const QStr
 #ifdef PLATFORM_WAYLAND
     qDebug() << "launchApplication(PLATFORM_WAYLAND):application=" << application<<",argv="<<argv;
 
-    arguments <<"-platform"<<"wayland";
+    arguments <<"-platform"<<"wayland"<<"-plugin"<<"EvdevTouch"<<"-plugin"<<"EvdevKeyboard";
     pro->start("/usr/local/"+application+"/"+pkgName,arguments);
 #else
     qDebug() << "launchApplication:application=" << application<<",argv="<<argv;

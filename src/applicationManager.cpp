@@ -53,11 +53,12 @@ void ApplicationManager::initConnection()
 
 void ApplicationManager::slot_onReverseTriggerStateChanged(bool triggered)
 {
-    if(triggered){
+    if (triggered && cvbsViewPro->state() == QProcess::NotRunning) {
         qDebug("Start cvbsView application.");
         cvbsViewPro->start();
         disableChildProcess();
-    }else{
+
+    } else if (!triggered && cvbsViewPro->state() == QProcess::Running) {
         qDebug("Close cvbsView application.");
         cvbsViewPro->terminate();
         cvbsViewPro->waitForFinished();
@@ -67,18 +68,18 @@ void ApplicationManager::slot_onReverseTriggerStateChanged(bool triggered)
 
 void ApplicationManager::enableChildProcess()
 {
-    if(pro->state() == QProcess::Running){
+    if (pro->state() == QProcess::Running) {
         pro->write(MSG_ENABLE_APPLICATION);
-    }else{
+    } else {
         emit launcherApplicationState(false);
     }
 }
 
 void ApplicationManager::disableChildProcess()
 {
-    if(pro->state() == QProcess::Running){
+    if (pro->state() == QProcess::Running) {
         pro->write(MSG_DISABLE_APPLICATION);
-    }else{
+    } else {
         emit launcherApplicationState(true);
     }
 }
@@ -105,7 +106,9 @@ QVariant ApplicationManager::data(const QModelIndex &index, int role) const
     return QVariant();
 }
 
-void ApplicationManager::launchApplication(const QString &application,const QString &pkgName,const QString &ui_name,const QString &argv,const QString &exitCallback)
+void ApplicationManager::launchApplication(const QString &application, const QString &pkgName,
+                                           const QString &ui_name, const QString &argv,
+                                           const QString &exitCallback)
 {
     QStringList arguments;
 #ifdef PLATFORM_WAYLAND
@@ -114,59 +117,64 @@ void ApplicationManager::launchApplication(const QString &application,const QStr
     arguments <<"-platform"<<"wayland"<<"-plugin"<<"EvdevTouch"<<"-plugin"<<"EvdevKeyboard";
     pro->start("/usr/local/"+application+"/"+pkgName,arguments);
 #else
-    qDebug() << "launchApplication:application=" << application<<",argv="<<argv;
+    qDebug() << "launchApplication:application=" << application << ",argv=" << argv;
 
     //QStringList arguments;
 #ifdef DEVICE_EVB
-    arguments <<"-platform"<<"EGLFS"<<"-plugin"<<"EvdevTouch"<<"-plugin"<<"EvdevKeyboard";
+    arguments << "-platform" << "EGLFS" << "-plugin" << "EvdevTouch" << "-plugin" << "EvdevKeyboard";
 #endif
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-    if(application.compare("video")==0 || application.compare("camera")==0)
-    {
+    if (application.compare("video") == 0 || application.compare("camera") == 0) {
         env.insert("LC_ALL", "zh_CN.utf8");
         env.insert("QT_EGLFSPLATFORM_USE_GST_VIDEOSINK", "1");
         env.insert("QT_GSTREAMER_WINDOW_VIDEOSINK", "kmssink"); // Add  environment variable
         //env.insert("GST_DEBUG", "kmssink:5");//show video fps
-    }
-    else
-    {
+    } else {
         //env.insert("QT_EGLFSPLATFORM_USE_GST_VIDEOSINK", "");
         env.insert("QT_GSTREAMER_WINDOW_VIDEOSINK", " "); // remove  environment variable
     }
-    if(!exitCallback.isEmpty())
-    {
+
+    if (!exitCallback.isEmpty()) {
         env.insert("EXIT_CALLBACK", exitCallback);
         env.insert("APP_DIR", application);
     }
+
     pro->setProcessEnvironment(env);
-    if(false)
-    {
-        foreach(QString str,env.toStringList())
+    if (false) {
+        foreach (QString str,env.toStringList())
             qDebug() <<str;
 
-        pro->setStandardOutputFile("/tmp/"+application+"_out.log",QIODevice::Truncate);
-        pro->setStandardErrorFile("/tmp/"+application+"_error.log",QIODevice::Truncate);
+        pro->setStandardOutputFile("/tmp/" + application + "_out.log", QIODevice::Truncate);
+        pro->setStandardErrorFile("/tmp/" + application + "_error.log", QIODevice::Truncate);
     }
-    if(!argv.isEmpty())
-    {
-        arguments=argv.split(" ");
-        //foreach(QString str,arguments)
-        //    qDebug() <<str;
-        pro->start("/usr/local/"+application+"/"+pkgName,arguments);
-    }
-    else
-    {
-	#ifdef DEVICE_EVB
-		pro->start("/usr/local/"+application+"/"+pkgName,arguments);
-	#else
-		pro->start("/usr/local/"+application+"/"+pkgName);
-	#endif
-    }
-    setOomAdj(pro->pid(),2);
-    //getOomAdj(pro->pid());
-    emit  launcherApplicationState(true);
-#endif
 
+    if (!argv.isEmpty()) {
+        arguments = argv.split(" ");
+        if (application.compare("cvbsView") == 0) {
+            cvbsViewPro->start("/usr/local/" + application + "/" + pkgName, arguments);
+        } else {
+            pro->start("/usr/local/" + application + "/" + pkgName, arguments);
+        }
+    } else {
+#ifdef DEVICE_EVB
+        if (application.compare("cvbsView") == 0) {
+            cvbsViewPro->start("/usr/local/" + application + "/" + pkgName, arguments);
+        } else {
+            pro->start("/usr/local/" + application + "/" + pkgName, arguments);
+        }
+#else
+        if (application.compare("cvbsView") == 0) {
+            cvbsViewPro->start("/usr/local/" + application + "/" + pkgName);
+        } else {
+            pro->start("/usr/local/" + application + "/" + pkgName);
+        }
+#endif
+    }
+
+    setOomAdj(pro->pid(), 2);
+    //getOomAdj(pro->pid());
+    emit launcherApplicationState(true);
+#endif
 }
 
 QHash<int, QByteArray> ApplicationManager::roleNames() const

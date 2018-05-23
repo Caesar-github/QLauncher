@@ -121,13 +121,10 @@ void ApplicationManager::launchApplication(const QString &application, const QSt
 
     //QStringList arguments;
 #ifdef DEVICE_EVB
-    arguments << "-platform" << "EGLFS" << "-plugin" << "EvdevTouch" << "-plugin" << "EvdevKeyboard";
+    arguments << "-plugin" << "EvdevTouch" << "-plugin" << "EvdevKeyboard";
 #endif
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
     if (application.compare("video") == 0 || application.compare("camera") == 0) {
-        env.insert("LC_ALL", "zh_CN.utf8");
-        env.insert("QT_EGLFSPLATFORM_USE_GST_VIDEOSINK", "1");
-        env.insert("QT_GSTREAMER_WINDOW_VIDEOSINK", "kmssink"); // Add  environment variable
         //env.insert("GST_DEBUG", "kmssink:5");//show video fps
     } else {
         //env.insert("QT_EGLFSPLATFORM_USE_GST_VIDEOSINK", "");
@@ -303,9 +300,7 @@ void ApplicationManager::processError(QProcess::ProcessError){
 
     QStringList arguments;
 #ifdef DEVICE_EVB
-    arguments <<"-platform"<<"EGLFS"<<"-plugin"<<"EvdevTouch"<<"-plugin"<<"EvdevKeyboard";
-#else
-    arguments <<"-platform"<<"EGLFS";
+    arguments <<"-plugin"<<"EvdevTouch"<<"-plugin"<<"EvdevKeyboard";
 #endif
     QProcess::startDetached(qApp->applicationFilePath(), arguments);
 

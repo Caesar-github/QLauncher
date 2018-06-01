@@ -286,7 +286,7 @@ void ApplicationManager::processFinished(int, QProcess::ExitStatus){
 
 void ApplicationManager::processError(QProcess::ProcessError){
     qDebug() << "processError" << endl;
-
+/*
 #ifdef PLATFORM_WAYLAND
     emit  launcherApplicationState(false);
     processExitCallback();
@@ -306,6 +306,7 @@ void ApplicationManager::processError(QProcess::ProcessError){
 
     qApp->exit(0);
 #endif
+*/
 }
 
 void ApplicationManager::cvbsViewProcessError(QProcess::ProcessError)

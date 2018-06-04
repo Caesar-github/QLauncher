@@ -28,8 +28,8 @@ RESOURCES += resources.qrc
 SUBDIRS += \
     src
 
-exists(  $$PWD/../../device/rockchip/rk3399 ) {
+# exists(  $$PWD/../../device/rockchip/rk3399 ) {
 DEFINES += PLATFORM_WAYLAND
-message( "build $$TARGET with $$DEFINES support.")
-  }
+# message( "build $$TARGET with $$DEFINES support.")
+#   }
 

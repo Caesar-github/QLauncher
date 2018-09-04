@@ -1,7 +1,7 @@
 import QtQuick 2.0
 import com.cai.qlauncher 1.0 as QL
 import config 1.0 as Config
-import QtQuick.Dialogs 1.1
+
 FocusScope {
     id: root
     property var wallpaper: "file:///usr/local/QLauncher/background.jpg"
@@ -34,29 +34,7 @@ FocusScope {
 
     MouseArea {
         anchors.fill: parent
-        onPressAndHold:
-        {
-            //console.debug("FocusScope onPressAndHold fileDialog.Open="+fileDialog.Open);
-            fileDialog.close()
-            fileDialog.open();
-        }
-
     }
-
-
-    FileDialog{
-           id: fileDialog;
-           title: "Please choose a file";
-           //shortcuts: shortcuts.home;
-           nameFilters: ["Image Files (*.jpg *.png *.gif)"];
-           onAccepted: {
-               background.source = (fileDialog.fileUrl.toString() !==""?fileDialog.fileUrl:wallpaper);
-               QL.Launcher.pickWallpaper(fileDialog.fileUrl)
-               //console.log("background changed:"+fileDialog.fileUrl)
-               fileDialog.close()
-           }
-           visible: false
-       }
 
     Keys.onPressed: {
          //console.debug("key onPressed:"+event.key);
@@ -79,22 +57,6 @@ FocusScope {
             width: parent.width
             height: 80 * QL.DisplayConfig.dp
         }
-
-        MouseArea {
-            anchors.fill: parent
-            propagateComposedEvents: true
-            onPressAndHold:
-            {
-                //console.debug("GridView onPressAndHold");
-                mouse.accepted = false
-            }
-            /*onClicked:
-            {
-                console.debug("GridView onClicked");
-                 mouse.accepted = false
-            }*/
-        }
-
 
         add: Transition {
             NumberAnimation { properties: "opacity"; from: 0; to: 1; duration: 450 }

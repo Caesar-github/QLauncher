@@ -8,7 +8,7 @@ import debug 1.0 as D
 import config 1.0 as Config
 ApplicationWindow {
     id: applicationWindow
-    flags: Qt.FramelessWindowHint | Qt.WindowFullScreen
+    flags: Qt.FramelessWindowHint | Qt.QWindow
     property bool isWindowActive: Qt.application.state === Qt.ApplicationActive
     property int dpi: Screen.pixelDensity * 25.4
 
@@ -29,10 +29,8 @@ ApplicationWindow {
 
     color: Config.Theme.colorApplicationWindow
 
-    width:  Screen.width
-    height: Screen.height
-
     visible: true
+    visibility: "FullScreen"
 
     onWidthChanged: updatePortraitMode()
     onHeightChanged: updatePortraitMode()

@@ -50,8 +50,21 @@
 
 #include <QApplication>
 #include <QCommandLineParser>
-
+#include <QDebug>
+#include <QDir>
+#include <QListWidget>
+#include <QListWidgetItem>
+#include <QTemporaryFile>
+#include <QTextStream>
+#include <QVBoxLayout>
 #include "wallpaper.h"
+#include "xdgdesktopfile.h"
+
+#define ICON_DIR1 "$HOME/.icons"
+#define ICON_DIR2 "$XDG_DATA_DIRS/icons"
+#define ICON_DIR3 "/usr/share/pixmaps"
+#define APP_DIR "/usr/share/applications"
+#define DEFAULT_ICON "/usr/share/pixmaps/debian-logo.png"
 
 int main(int argc, char *argv[])
 {
@@ -66,6 +79,35 @@ int main(int argc, char *argv[])
         && !wallpaper.loadFile(commandLineParser.positionalArguments().front())) {
         return -1;
     }
+    QDir dir(APP_DIR);
+    QStringList filters;
+    filters << "*.desktop";
+    dir.setNameFilters(filters);
+    QFileInfoList list = dir.entryInfoList();
+    //QListWidget *listWidget = new QListWidget;
+    //QVBoxLayout *layout = new QVBoxLayout;
+    if(list.length()!=0) {
+        for (int i = 0; i < list.size(); ++i) {
+            qDebug() << list.at(i).fileName();
+            XdgDesktopFile df;
+            df.load(list.at(i).fileName());
+            const QIcon di = QIcon(DEFAULT_ICON);
+            df.icon(di);
+            //QListWidgetItem *item = new QListWidgetItem(df.fileName(), listWidget);
+            //listWidget->insertItem(i+1, item);
+        }
+    } else {
+        qDebug()<<"no file";
+    }
+    //listWidget->setFlow(QListView::LeftToRight);
+    //listWidget->setResizeMode(QListView::Adjust);
+    //listWidget->setGridSize(QSize(8, 8));
+    //listWidget->setViewMode(QListView::IconMode);
+    //listWidget->show();
+    //layout->addWidget(listWidget);
+    //wallpaper.setLayout(layout);
+
+
     wallpaper.show();
     return app.exec();
 }

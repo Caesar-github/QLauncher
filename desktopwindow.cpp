@@ -47,36 +47,68 @@
 ** $QT_END_LICENSE$
 **
 ****************************************************************************/
+#include "desktopwindow.h"
+#include "xdgdesktopfile.h"
 
-#include <QtWidgets>
-#include "wallpaper.h"
+#define DESKTOP_DIR "/usr/share/applications"
 
-//! [0]
-Wallpaper::Wallpaper()
-   : imageLabel(new QLabel)
+void DesktopWidget::paintEvent(QPaintEvent *)
 {
-    imageLabel->setBackgroundRole(QPalette::Base);
-    imageLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-    imageLabel->setScaledContents(true);
+    QPainter p(this);
 
-    setCentralWidget(imageLabel);
-    showFullScreen();
+    p.drawPixmap(0, 0, width(), height(), QPixmap(":/resources/images/background.jpg"));
+}
+
+DesktopWindow::DesktopWindow()
+{
+    QDesktopWidget *desktopwidget = QApplication::desktop();
+    QRect desktoprect = desktopwidget->availableGeometry();
+    int base = qMin(desktoprect.width(),desktoprect.height());
+    qDebug() << "QLauncher available size :" << desktoprect.width() << "x" << desktoprect.height();
+
+    QDir dir(DESKTOP_DIR);
+    QStringList filters;
+    filters << "*.desktop";
+    dir.setNameFilters(filters);
+    list = dir.entryInfoList();
+
+    if (list.length()!=0) {
+        DesktopWidget *widget = new DesktopWidget;
+        QVBoxLayout *layout = new QVBoxLayout;
+        QListWidget  *listWidget = new QListWidget;
+
+        for (int i = 0; i < list.size(); ++i) {
+	     XdgDesktopFile df;
+	     df.load(list.at(i).fileName());
+	     QListWidgetItem *item = new QListWidgetItem(df.icon(),df.name() );
+	     qDebug() << "QLauncher add application:" << i << df.name();
+	     listWidget->insertItem(i + 1, item);
+	     item->setSizeHint(QSize(base/12,base/8));
+	}
+	listWidget->setSpacing(base/25);
+	listWidget->setViewMode(QListView::IconMode);
+	listWidget->setIconSize(QSize(base/12,base/12));
+	listWidget->setStyleSheet("background-color:transparent");
+	layout->addWidget(listWidget);
+	widget->setLayout(layout);
+	setCentralWidget(widget);
+	connect(listWidget, &QListWidget::itemClicked, this, &DesktopWindow::clickedItem);
+    } else
+	qDebug()<<"QLauncher no found .desktop file in"<<DESKTOP_DIR;
+
     resize(QGuiApplication::primaryScreen()->availableSize());
 }
 
-//! [0]
-//! [2]
-
-bool Wallpaper::loadFile(const QString &fileName)
+void DesktopWindow::clickedItem(QListWidgetItem * item)
 {
-    QImageReader reader(fileName);
-    reader.setAutoTransform(true);
-    const QImage newImage = reader.read();
-    imageLabel->setPixmap(QPixmap::fromImage(newImage));
-    imageLabel->adjustSize();
-    setWindowFilePath(fileName);
-
-    return true;
+    for (int i = 0; i < list.size(); ++i) {
+        XdgDesktopFile df;
+        df.load(list.at(i).fileName());
+        if (df.name() == item->text()) {
+	    qDebug()<<"QLauncher start"<<df.name();
+	    df.startDetached();
+	}
+    }
 }
 
 

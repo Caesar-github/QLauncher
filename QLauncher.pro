@@ -1,17 +1,18 @@
-QT += widgets gui
+QT += widgets
 
-HEADERS       = wallpaper.h \
-    xdgdesktopfile.h \
-    xdgdesktopfile_p.h \
-    xdgdirs.h \
-    xdgicon.h \
-    xdgmacros.h
-SOURCES       = wallpaper.cpp \
-                main.cpp \
-    xdgdesktopfile.cpp \
-    xdgdirs.cpp \
-    xdgicon.cpp
+HEADERS       = desktopwindow.h \
+		xdgdesktopfile.h \
+		xdgdesktopfile_p.h \
+		xdgdirs.h \
+		xdgicon.h \
+		xdgmacros.h
 
-# install
-target.path = $$[QT_INSTALL_EXAMPLES]/widgets/widgets/imageviewer
-INSTALLS += target
+SOURCES       = desktopwindow.cpp \
+		main.cpp \
+		xdgdesktopfile.cpp \
+		xdgdirs.cpp \
+		xdgicon.cpp
+
+RESOURCES     += QLauncher.qrc
+
+TARGET = QLauncher

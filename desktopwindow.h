@@ -48,31 +48,35 @@
 **
 ****************************************************************************/
 
-#ifndef IMAGEVIEWER_H
-#define IMAGEVIEWER_H
+#ifndef DESKTOPWINDOW_H
+#define DESKTOPWINDOW_H
 
-#include <QMainWindow>
-#include <QImage>
+#include <QtWidgets>
 
 QT_BEGIN_NAMESPACE
 class QLabel;
 QT_END_NAMESPACE
 
-//! [0]
-class Wallpaper : public QMainWindow
+class DesktopWidget : public QWidget
+{
+    Q_OBJECT
+
+private:
+    void paintEvent(QPaintEvent *);
+};
+
+class DesktopWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    Wallpaper();
-    bool loadFile(const QString &);
+    DesktopWindow();
 
 private slots:
+    void clickedItem(QListWidgetItem * item);
 
 private:
-    QLabel *imageLabel;
-
+    QFileInfoList list;
 };
-//! [0]
 
 #endif

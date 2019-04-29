@@ -83,16 +83,17 @@ DesktopWindow::DesktopWindow()
 	     QListWidgetItem *item = new QListWidgetItem(df.icon(),df.name() );
 	     qDebug() << "QLauncher add application:" << i << df.name();
 	     listWidget->insertItem(i + 1, item);
-	     item->setSizeHint(QSize(base/12,base/8));
 	}
 	listWidget->setSpacing(base/25);
 	listWidget->setViewMode(QListView::IconMode);
-	listWidget->setIconSize(QSize(base/12,base/12));
+	listWidget->setDragEnabled(false);
+	listWidget->setIconSize(QSize(base/8,base/8));
 	listWidget->setStyleSheet("background-color:transparent");
 	layout->addWidget(listWidget);
 	widget->setLayout(layout);
 	setCentralWidget(widget);
-	connect(listWidget, &QListWidget::itemClicked, this, &DesktopWindow::clickedItem);
+	connect(listWidget, &QListWidget::itemEntered, this, &DesktopWindow::clickedItem);
+	connect(listWidget, &QListWidget::itemPressed, this, &DesktopWindow::clickedItem);
     } else
 	qDebug()<<"QLauncher no found .desktop file in"<<DESKTOP_DIR;
 

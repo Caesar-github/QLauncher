@@ -56,7 +56,7 @@ void DesktopWidget::paintEvent(QPaintEvent *)
 {
     QPainter p(this);
 
-    p.drawPixmap(0, 0, width(), height(), QPixmap(":/resources/images/background.jpg"));
+    p.drawPixmap(0, 0, width(), height(), QPixmap("/usr/share/backgrounds/background.jpg"));
 }
 
 DesktopWindow::DesktopWindow()

@@ -33,7 +33,7 @@
 #include <QString>
 #include <QStringList>
 
-#define DEFAULT_ICON "/usr/share/pixmaps/debian-logo.png"
+#define DEFAULT_ICON ":/resources/icon.png"
 class QTXDG_API XdgIcon
 {
 public:

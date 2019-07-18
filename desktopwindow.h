@@ -53,19 +53,7 @@
 
 #include <QtWidgets>
 
-QT_BEGIN_NAMESPACE
-class QLabel;
-QT_END_NAMESPACE
-
-class DesktopWidget : public QWidget
-{
-    Q_OBJECT
-
-private:
-    void paintEvent(QPaintEvent *);
-};
-
-class DesktopWindow : public QMainWindow
+class DesktopWindow : public QListWidget
 {
     Q_OBJECT
 
@@ -73,10 +61,10 @@ public:
     DesktopWindow();
 
 private slots:
-    void clickedItem(QListWidgetItem * item);
+    void on_itemClicked(QListWidgetItem * item);
 
 private:
     QFileInfoList list;
 };
 
-#endif
+#endif //DESKTOPWINDOW_H

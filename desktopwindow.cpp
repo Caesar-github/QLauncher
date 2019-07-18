@@ -49,15 +49,9 @@
 ****************************************************************************/
 #include "desktopwindow.h"
 #include "xdgdesktopfile.h"
+#include <QAbstractScrollArea>
 
 #define DESKTOP_DIR "/usr/share/applications"
-
-void DesktopWidget::paintEvent(QPaintEvent *)
-{
-    QPainter p(this);
-
-    p.drawPixmap(0, 0, width(), height(), QPixmap("/usr/share/backgrounds/background.jpg"));
-}
 
 DesktopWindow::DesktopWindow()
 {
@@ -73,42 +67,38 @@ DesktopWindow::DesktopWindow()
     list = dir.entryInfoList();
 
     if (list.length()!=0) {
-        DesktopWidget *widget = new DesktopWidget;
-        QVBoxLayout *layout = new QVBoxLayout;
-        QListWidget  *listWidget = new QListWidget;
-
         for (int i = 0; i < list.size(); ++i) {
-	     XdgDesktopFile df;
-	     df.load(list.at(i).fileName());
-	     QListWidgetItem *item = new QListWidgetItem(df.icon(),df.name() );
-	     qDebug() << "QLauncher add application:" << i << df.name();
-	     listWidget->insertItem(i + 1, item);
-	}
-	listWidget->setSpacing(base/25);
-	listWidget->setViewMode(QListView::IconMode);
-	listWidget->setDragEnabled(false);
-	listWidget->setIconSize(QSize(base/8,base/8));
-	listWidget->setStyleSheet("background-color:transparent");
-	layout->addWidget(listWidget);
-	widget->setLayout(layout);
-	setCentralWidget(widget);
-	connect(listWidget, &QListWidget::itemEntered, this, &DesktopWindow::clickedItem);
-	connect(listWidget, &QListWidget::itemPressed, this, &DesktopWindow::clickedItem);
+            XdgDesktopFile df;
+            df.load(list.at(i).fileName());
+            QListWidgetItem *item = new QListWidgetItem(df.icon(), df.name());
+            qDebug() << "QLauncher add application:" << i << df.name();
+            addItem(item);
+        }
+        setSpacing(base/25);
+        setViewMode(QListView::IconMode);
+        setFlow(QListView::LeftToRight);
+        setDragEnabled(false);
+        setIconSize(QSize(base/8,base/8));
+        setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        setStyleSheet("background-color:transparent");
+        setStyleSheet(tr("border-image: url(:/resources/background.jpg);"));
+//        connect(this, SIGNAL(itemPressed(QListWidgetItem *)), this, SLOT(on_itemClicked(QListWidgetItem *)));
+        connect(this, SIGNAL(itemClicked(QListWidgetItem *)), this, SLOT(on_itemClicked(QListWidgetItem *)));
     } else
-	qDebug()<<"QLauncher no found .desktop file in"<<DESKTOP_DIR;
-
-    resize(QGuiApplication::primaryScreen()->availableSize());
+        qDebug()<<"QLauncher no found .desktop file in"<<DESKTOP_DIR;
+        resize(QGuiApplication::primaryScreen()->availableSize());
 }
 
-void DesktopWindow::clickedItem(QListWidgetItem * item)
+void DesktopWindow::on_itemClicked(QListWidgetItem * item)
 {
     for (int i = 0; i < list.size(); ++i) {
         XdgDesktopFile df;
         df.load(list.at(i).fileName());
         if (df.name() == item->text()) {
-	    qDebug()<<"QLauncher start"<<df.name();
-	    df.startDetached();
-	}
+            qDebug()<<"QLauncher start"<<df.name();
+            df.startDetached();
+        }
     }
 }
 

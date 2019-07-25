@@ -27,16 +27,9 @@
 
 //#include "desktopenvironment_p.cpp"
 #include "xdgdesktopfile.h"
-#include "xdgdesktopfile_p.h"
-#include "xdgdirs.h"
-#include "xdgicon.h"
-
 #include <stdlib.h>
 #include <unistd.h>
-
 #include <QDebug>
-//#include <QDBusInterface>
-//#include <QDBusObjectPath>
 #include <QDesktopServices>
 #include <QDir>
 #include <QSharedData>
@@ -52,7 +45,7 @@
 #include <QTextStream>
 #include <QUrl>
 #include <QtAlgorithms>
-
+#define DEFAULT_ICON ":/resources/icon.png"
 
 /**
  *  See: http://standards.freedesktop.org/desktop-entry-spec
@@ -63,13 +56,6 @@
 static const QStringList nonDetachExecs = QStringList()
     << QLatin1String("pkexec");
 
-static const QLatin1String onlyShowInKey("OnlyShowIn");
-static const QLatin1String notShowInKey("NotShowIn");
-static const QLatin1String categoriesKey("Categories");
-static const QLatin1String actionsKey("Actions");
-static const QLatin1String extendPrefixKey("X-");
-static const QLatin1String mimeTypeKey("MimeType");
-static const QLatin1String applicationsStr("applications");
 
 static const QLatin1String nameKey("Name");
 static const QLatin1String typeKey("Type");
@@ -77,10 +63,18 @@ static const QLatin1String ApplicationStr("Application");
 static const QLatin1String LinkStr("Link");
 static const QLatin1String DirectoryStr("Directory");
 static const QLatin1String execKey("Exec");
-static const QLatin1String urlKey("URL");
 static const QLatin1String iconKey("Icon");
-
-static const QLatin1String initialPreferenceKey("InitialPreference");
+static const QString userDirectoryString[8] =
+{
+    QLatin1String("Desktop"),
+    QLatin1String("Download"),
+    QLatin1String("Templates"),
+    QLatin1String("Publicshare"),
+    QLatin1String("Documents"),
+    QLatin1String("Music"),
+    QLatin1String("Pictures"),
+    QLatin1String("Videos")
+};
 
 // Helper functions prototypes
 bool checkTryExec(const QString& progName);
@@ -99,71 +93,7 @@ void replaceVar(QString &str, const QString &varName, const QString &after);
 QString &unEscape(QString& str);
 QString &unEscapeExec(QString& str);
 void loadMimeCacheDir(const QString& dirName, QHash<QString, QList<XdgDesktopFile*> > & cache);
-
-
-QString &doEscape(QString& str, const QHash<QChar,QChar> &repl)
-{
-    // First we replace slash.
-    str.replace(QLatin1Char('\\'), QLatin1String("\\\\"));
-
-    QHashIterator<QChar,QChar> i(repl);
-    while (i.hasNext()) {
-        i.next();
-        if (i.key() != QLatin1Char('\\'))
-            str.replace(i.key(), QString::fromLatin1("\\\\%1").arg(i.value()));
-    }
-
-    return str;
-}
-
-/************************************************
- The escape sequences \s, \n, \t, \r, and \\ are supported for values
- of type string and localestring, meaning ASCII space, newline, tab,
- carriage return, and backslash, respectively.
- ************************************************/
-QString &escape(QString& str)
-{
-    QHash<QChar,QChar> repl;
-    repl.insert(QLatin1Char('\n'),  QLatin1Char('n'));
-    repl.insert(QLatin1Char('\t'),  QLatin1Char('t'));
-    repl.insert(QLatin1Char('\r'),  QLatin1Char('r'));
-
-    return doEscape(str, repl);
-}
-
-
-/************************************************
- Quoting must be done by enclosing the argument between double quotes and
- escaping the
-    double quote character,
-    backtick character ("`"),
-    dollar sign ("$") and
-    backslash character ("\")
-by preceding it with an additional backslash character.
-Implementations must undo quoting before expanding field codes and before
-passing the argument to the executable program.
-
-Note that the general escape rule for values of type string states that the
-backslash character can be escaped as ("\\") as well and that this escape
-rule is applied before the quoting rule. As such, to unambiguously represent a
-literal backslash character in a quoted argument in a desktop entry file
-requires the use of four successive backslash characters ("\\\\").
-Likewise, a literal dollar sign in a quoted argument in a desktop entry file
-is unambiguously represented with ("\\$").
- ************************************************/
-QString &escapeExec(QString& str)
-{
-    QHash<QChar,QChar> repl;
-    // The parseCombinedArgString() splits the string by the space symbols,
-    // we temporarily replace them on the special characters.
-    // Replacement will reverse after the splitting.
-    repl.insert(QLatin1Char('"'), QLatin1Char('"'));    // double quote,
-    repl.insert(QLatin1Char('\''), QLatin1Char('\''));  // single quote ("'"),
-    repl.insert(QLatin1Char('\\'), QLatin1Char('\\'));  // backslash character ("\"),
-    repl.insert(QLatin1Char('$'), QLatin1Char('$'));    // dollar sign ("$"),
-
-    return doEscape(str, repl);
-}
+QStringList dataDirs(const QString &postfix);
 
 
 QString &doUnEscape(QString& str, const QHash<QChar,QChar> &repl)
@@ -275,6 +205,32 @@ QString &unEscapeExec(QString& str)
     return doUnEscape(str, repl);
 }
 
+void fixBashShortcuts(QString &s)
+{
+    if (s.startsWith(QLatin1Char('~')))
+        s = QFile::decodeName(qgetenv("HOME")) + (s).mid(1);
+}
+
+void removeEndingSlash(QString &s)
+{
+    // We don't check for empty strings. Caller must check it.
+
+    // Remove the ending slash, except for root dirs.
+    if (s.length() > 1 && s.endsWith(QLatin1Char('/')))
+        s.chop(1);
+}
+
+void cleanAndAddPostfix(QStringList &dirs, const QString& postfix)
+{
+    const int N = dirs.count();
+    for(int i = 0; i < N; ++i)
+    {
+        fixBashShortcuts(dirs[i]);
+        removeEndingSlash(dirs[i]);
+        dirs[i].append(postfix);
+    }
+}
+
 namespace
 {
     /*!
@@ -312,9 +268,6 @@ public:
     bool read(const QString &prefix);
     XdgDesktopFile::Type detectType(XdgDesktopFile *q) const;
     bool startApplicationDetached(const XdgDesktopFile *q, const QString & action, const QStringList& urls) const;
-    bool startLinkDetached(const XdgDesktopFile *q) const;
-    bool startByDBus(const QString & action, const QStringList& urls) const;
-    QStringList getListValue(const XdgDesktopFile * q, const QString & key, bool tryExtendPrefix) const;
 
     QString mFileName;
     bool mIsValid;
@@ -423,8 +376,8 @@ bool XdgDesktopFileData::startApplicationDetached(const XdgDesktopFile *q, const
          * We consider that this violation is more acceptable than an failure
          * in launching an application.
          */
-        if (startByDBus(action, urls))
-            return true;
+
+            return false;
     }
     QStringList args = action.isEmpty()
         ? q->expandExecString(urls)
@@ -483,98 +436,6 @@ bool XdgDesktopFileData::startApplicationDetached(const XdgDesktopFile *q, const
     }
 }
 
-
-bool XdgDesktopFileData::startLinkDetached(const XdgDesktopFile *q) const
-{
-    QString url = q->url();
-
-    if (url.isEmpty())
-    {
-        qWarning() << "XdgDesktopFileData::startLinkDetached: url is empty.";
-        return false;
-    }
-
-    QString scheme = QUrl(url).scheme();
-
-    if (scheme.isEmpty() || scheme == QLatin1String("file"))
-    {
-        // Local file
-        QFileInfo fi(url);
-
-        QMimeDatabase db;
-        QMimeType mimeInfo = db.mimeTypeForFile(fi);
-        XdgDesktopFile* desktopFile = XdgDesktopFileCache::getDefaultApp(mimeInfo.name());
-
-        if (desktopFile)
-            return desktopFile->startDetached(url);
-    }
-    else
-    {
-        // Internet URL
-        return QDesktopServices::openUrl(QUrl::fromEncoded(url.toLocal8Bit()));
-    }
-
-    return false;
-}
-
-bool XdgDesktopFileData::startByDBus(const QString & action, const QStringList& urls) const
-{
-#if 0
-    QFileInfo f(mFileName);
-    QString path(f.completeBaseName());
-    path = path.replace(QLatin1Char('.'), QLatin1Char('/')).prepend(QLatin1Char('/'));
-
-    QVariantMap platformData;
-    platformData.insert(QLatin1String("desktop-startup-id"), QString::fromLocal8Bit(qgetenv("DESKTOP_STARTUP_ID")));
-
-    QDBusObjectPath d_path(path);
-    if (d_path.path().isEmpty())
-    {
-        qWarning() << "XdgDesktopFileData::startByDBus: invalid name" << f.fileName() << "of DBusActivatable .desktop file"
-                ", assembled DBus object path" << path << "is invalid!";
-        return false;
-    }
-    QDBusInterface app(f.completeBaseName(), path, QLatin1String("org.freedesktop.Application"));
-    //Note: after the QDBusInterface construction, it can *invalid* (has reasonable lastError())
-    // but this can be due to some intermediate DBus call(s) which doesn't need to be fatal and
-    // our next call() can succeed
-    // see discussion https://github.com/lxqt/libqtxdg/pull/75
-    if (app.lastError().isValid())
-    {
-        qWarning().noquote() << "XdgDesktopFileData::startByDBus: invalid interface:" << app.lastError().message()
-            << ", but trying to continue...";
-    }
-    QDBusMessage reply;
-    if (!action.isEmpty())
-    {
-        QList<QVariant> v_urls;
-        for (const auto & url : urls)
-             v_urls.append(url);
-        reply = app.call(QLatin1String("ActivateAction"), action, v_urls, platformData);
-    } else if (urls.isEmpty())
-        reply = app.call(QLatin1String("Activate"), platformData);
-    else
-        reply = app.call(QLatin1String("Open"), urls, platformData);
-
-    return QDBusMessage::ErrorMessage != reply.type();
-   #endif
-    return 0;
-}
-
-QStringList XdgDesktopFileData::getListValue(const XdgDesktopFile * q, const QString & key, bool tryExtendPrefix) const
-{
-    QString used_key = key;
-    if (!q->contains(used_key) && tryExtendPrefix)
-    {
-        used_key = extendPrefixKey + key;
-        if (!q->contains(used_key))
-            return QStringList();
-    }
-
-    return q->value(used_key).toString().split(QLatin1Char(';'), QString::SkipEmptyParts);
-}
-
-
 XdgDesktopFile::XdgDesktopFile():
     d(new XdgDesktopFileData)
 {
@@ -586,49 +447,9 @@ XdgDesktopFile::XdgDesktopFile(const XdgDesktopFile& other):
 {
 }
 
-
-XdgDesktopFile::XdgDesktopFile(Type type, const QString& name, const QString &value):
-    d(new XdgDesktopFileData)
-{
-    d->mFileName = name + QLatin1String(".desktop");
-    d->mType = type;
-    setValue(QLatin1String("Version"), QLatin1String("1.0"));
-    setValue(nameKey, name);
-    if (type == XdgDesktopFile::ApplicationType)
-    {
-        setValue(typeKey, ApplicationStr);
-        setValue(execKey, value);
-    }
-    else if (type == XdgDesktopFile::LinkType)
-    {
-        setValue(typeKey, LinkStr);
-        setValue(urlKey, value);
-    }
-    else if (type == XdgDesktopFile::DirectoryType)
-    {
-        setValue(typeKey, DirectoryStr);
-    }
-    d->mIsValid = check();
-}
-
-
 XdgDesktopFile::~XdgDesktopFile()
 {
 }
-
-
-XdgDesktopFile& XdgDesktopFile::operator=(const XdgDesktopFile& other)
-{
-    d = other.d;
-    return *this;
-}
-
-
-bool XdgDesktopFile::operator==(const XdgDesktopFile &other) const
-{
-    return d->mItems == other.d->mItems;
-}
-
 
 bool XdgDesktopFile::load(const QString& fileName)
 {
@@ -652,41 +473,6 @@ bool XdgDesktopFile::load(const QString& fileName)
     return isValid();
 }
 
-
-bool XdgDesktopFile::save(QIODevice *device) const
-{
-    QTextStream stream(device);
-    QMap<QString, QVariant>::const_iterator i = d->mItems.constBegin();
-
-    QString section;
-    while (i != d->mItems.constEnd())
-    {
-        QString path = i.key();
-        QString sect =  path.section(QLatin1Char('/'),0,0);
-        if (sect != section)
-        {
-            section = sect;
-            stream << QLatin1Char('[') << section << QLatin1Char(']') << endl;
-
-        }
-        QString key = path.section(QLatin1Char('/'), 1);
-        stream << key << QLatin1Char('=') << i.value().toString() << endl;
-        ++i;
-    }
-    return true;
-}
-
-
-bool XdgDesktopFile::save(const QString &fileName) const
-{
-    QFile file(fileName);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-        return false;
-
-    return save(&file);
-}
-
-
 QVariant XdgDesktopFile::value(const QString& key, const QVariant& defaultValue) const
 {
     QString path = (!prefix().isEmpty()) ? prefix() + QLatin1Char('/') + key : key;
@@ -698,36 +484,6 @@ QVariant XdgDesktopFile::value(const QString& key, const QVariant& defaultValue)
     }
 
     return res;
-}
-
-
-void XdgDesktopFile::setValue(const QString &key, const QVariant &value)
-{
-    QString path = (!prefix().isEmpty()) ? prefix() + QLatin1Char('/') + key : key;
-    if (value.type() == QVariant::String)
-    {
-
-        QString s=value.toString();
-        if (key.toUpper() == QLatin1String("EXEC"))
-            escapeExec(s);
-        else
-            escape(s);
-
-        d->mItems[path] = QVariant(s);
-
-        if (key.toUpper() == QLatin1String("TYPE"))
-            d->mType = d->detectType(this);
-    }
-    else
-    {
-        d->mItems[path] = value;
-    }
-}
-
-
-void XdgDesktopFile::setLocalizedValue(const QString &key, const QVariant &value)
-{
-    setValue(localizedKey(key), value);
 }
 
 
@@ -809,24 +565,6 @@ QVariant XdgDesktopFile::localizedValue(const QString& key, const QVariant& defa
     return value(localizedKey(key), defaultValue);
 }
 
-
-QStringList XdgDesktopFile::categories() const
-{
-    return d->getListValue(this, categoriesKey, true);
-}
-
-QStringList XdgDesktopFile::actions() const
-{
-    return d->getListValue(this, actionsKey, false);
-}
-
-void XdgDesktopFile::removeEntry(const QString& key)
-{
-    QString path = (!prefix().isEmpty()) ? prefix() + QLatin1Char('/') + key : key;
-    d->mItems.remove(path);
-}
-
-
 bool XdgDesktopFile::contains(const QString& key) const
 {
     QString path = (!prefix().isEmpty()) ? prefix() + QLatin1Char('/') + key : key;
@@ -839,60 +577,56 @@ bool XdgDesktopFile::isValid() const
     return d->mIsValid;
 }
 
-
-QString XdgDesktopFile::fileName() const
+/************************************************
+ Returns the QIcon corresponding to name in the current icon theme. If no such icon
+ is found in the current theme fallback is return instead.
+ ************************************************/
+QIcon XdgDesktopFile::fromTheme(const QString& iconName, const QIcon& fallback)
 {
-    return d->mFileName;
-}
+    if (iconName.isEmpty())
+        return fallback;
 
+    bool isAbsolute = (iconName[0] == QLatin1Char('/'));
+
+    QString name = QFileInfo(iconName).fileName();
+    if (name.endsWith(QLatin1String(".png"), Qt::CaseInsensitive) ||
+        name.endsWith(QLatin1String(".svg"), Qt::CaseInsensitive) ||
+        name.endsWith(QLatin1String(".xpm"), Qt::CaseInsensitive))
+    {
+        name.truncate(name.length() - 4);
+    }
+
+    QIcon *cachedIcon;
+    if (!isAbsolute) {
+        QString absolute_name_png = "/usr/share/pixmaps/" + name + ".png";
+        QString absolute_name_xpm = "/usr/share/pixmaps/" + name + ".xpm";
+        QFileInfo fileInfoPng(absolute_name_png);
+        QFileInfo fileInfoXpm(absolute_name_xpm);
+        if(fileInfoPng.isFile())
+            cachedIcon = new QIcon(absolute_name_png);
+        else if(fileInfoXpm.isFile())
+            cachedIcon = new QIcon(absolute_name_xpm);
+        else
+            cachedIcon = new QIcon(DEFAULT_ICON);
+    } else {
+        cachedIcon = new QIcon(iconName);
+    }
+
+    return *cachedIcon;
+}
 
 QIcon const XdgDesktopFile::icon(const QIcon& fallback) const
 {
-    QIcon result = XdgIcon::fromTheme(value(iconKey).toString(), fallback);
+    QIcon result = fromTheme(value(iconKey).toString(), fallback);
 
     if (result.isNull() && type() == ApplicationType) {
-        result = XdgIcon::fromTheme(QLatin1String("application-x-executable.png"));
+        result = fromTheme(QLatin1String("application-x-executable.png"));
         // TODO Maybe defaults for other desktopfile types as well..
     }
 
     return result;
 }
 
-
-QIcon const XdgDesktopFile::actionIcon(const QString & action, const QIcon& fallback) const
-{
-    return d->mType == ApplicationType
-        ? XdgDesktopAction{*this, action}.icon(icon(fallback))
-        : fallback;
-}
-
-
-QString const XdgDesktopFile::iconName() const
-{
-    return value(iconKey).toString();
-}
-
-
-QString const XdgDesktopFile::actionIconName(const QString & action) const
-{
-    return d->mType == ApplicationType
-        ? XdgDesktopAction{*this, action}.iconName()
-        : QString{};
-}
-
-
-QStringList XdgDesktopFile::mimeTypes() const
-{
-    return value(mimeTypeKey).toString().split(QLatin1Char(';'), QString::SkipEmptyParts);
-}
-
-
-QString XdgDesktopFile::actionName(const QString & action) const
-{
-    return d->mType == ApplicationType
-        ? XdgDesktopAction{*this, action}.name()
-        : QString{};
-}
 
 XdgDesktopFile::Type XdgDesktopFile::type() const
 {
@@ -919,19 +653,13 @@ bool XdgDesktopFile::startDetached(const QStringList& urls) const
         break;
 
     case LinkType:
-        return d->startLinkDetached(this);
+        return false;
         break;
 
     default:
         return false;
     }
 }
-
-bool XdgDesktopFile::actionActivate(const QString & action, const QStringList& urls) const
-{
-    return d->mType == ApplicationType ? d->startApplicationDetached(this, action, urls) : false;
-}
-
 
 /************************************************
  This is an overloaded function.
@@ -992,6 +720,69 @@ void replaceVar(QString &str, const QString &varName, const QString &after)
     str.replace(QRegExp(QString::fromLatin1("\\$\\{%1\\}").arg(varName)), after);
 }
 
+QString userDir(UserDirectory dir)
+{
+    // possible values for UserDirectory
+    Q_ASSERT(!(dir < Desktop || dir > Videos));
+    if (dir < Desktop || dir > Videos)
+        return QString();
+
+    QString folderName = userDirectoryString[dir];
+    QString fallback;
+    const QString home = QFile::decodeName(qgetenv("HOME"));
+
+    if (home.isEmpty())
+        return QString::fromLatin1("/tmp");
+    else if (dir == Desktop)
+        fallback = QString::fromLatin1("%1/%2").arg(home, QLatin1String("Desktop"));
+    else
+        fallback = home;
+
+    return fallback;
+
+    QString s = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation);
+    fixBashShortcuts(s);
+    QDir d(s);
+    if (!d.exists())
+    {
+        if (!d.mkpath(QLatin1String(".")))
+        {
+            qWarning() << QString::fromLatin1("Can't create %1 directory.").arg(d.absolutePath());
+        }
+    }
+    QString r = d.absolutePath();
+    removeEndingSlash(r);
+    QString configDir(s);
+    QFile configFile(configDir + QLatin1String("/user-dirs.dirs"));
+    if (!configFile.exists())
+        return fallback;
+
+    if (!configFile.open(QIODevice::ReadOnly | QIODevice::Text))
+        return fallback;
+
+    QString userDirVar(QLatin1String("XDG_") + folderName.toUpper() + QLatin1String("_DIR"));
+    QTextStream in(&configFile);
+    QString line;
+    while (!in.atEnd())
+    {
+        line = in.readLine();
+        if (line.contains(userDirVar))
+        {
+            configFile.close();
+
+            // get path between quotes
+            line = line.section(QLatin1Char('"'), 1, 1);
+            if (line.isEmpty())
+                return fallback;
+            line.replace(QLatin1String("$HOME"), QLatin1String("~"));
+            fixBashShortcuts(line);
+            return line;
+        }
+    }
+
+    configFile.close();
+    return fallback;
+}
 
 QString expandEnvVariables(const QString str)
 {
@@ -1018,23 +809,13 @@ QString expandEnvVariables(const QString str)
     replaceVar(res, QLatin1String("HOME"), homeDir);
     replaceVar(res, QLatin1String("USER"), QString::fromLocal8Bit(qgetenv("USER")));
 
-    replaceVar(res, QLatin1String("XDG_DESKTOP_DIR"),   XdgDirs::userDir(XdgDirs::Desktop));
-    replaceVar(res, QLatin1String("XDG_TEMPLATES_DIR"), XdgDirs::userDir(XdgDirs::Templates));
-    replaceVar(res, QLatin1String("XDG_DOCUMENTS_DIR"), XdgDirs::userDir(XdgDirs::Documents));
-    replaceVar(res, QLatin1String("XDG_MUSIC_DIR"), XdgDirs::userDir(XdgDirs::Music));
-    replaceVar(res, QLatin1String("XDG_PICTURES_DIR"), XdgDirs::userDir(XdgDirs::Pictures));
-    replaceVar(res, QLatin1String("XDG_VIDEOS_DIR"), XdgDirs::userDir(XdgDirs::Videos));
-    replaceVar(res, QLatin1String("XDG_PHOTOS_DIR"), XdgDirs::userDir(XdgDirs::Pictures));
-
-    return res;
-}
-
-
-QStringList expandEnvVariables(const QStringList strs)
-{
-    QStringList res;
-    for (const QString &s : strs)
-        res << expandEnvVariables(s);
+    replaceVar(res, QLatin1String("XDG_DESKTOP_DIR"),   userDir(Desktop));
+    replaceVar(res, QLatin1String("XDG_TEMPLATES_DIR"), userDir(Templates));
+    replaceVar(res, QLatin1String("XDG_DOCUMENTS_DIR"), userDir(Documents));
+    replaceVar(res, QLatin1String("XDG_MUSIC_DIR"), userDir(Music));
+    replaceVar(res, QLatin1String("XDG_PICTURES_DIR"), userDir(Pictures));
+    replaceVar(res, QLatin1String("XDG_VIDEOS_DIR"), userDir(Videos));
+    replaceVar(res, QLatin1String("XDG_PHOTOS_DIR"), userDir(Pictures));
 
     return res;
 }
@@ -1064,8 +845,6 @@ QStringList XdgDesktopFile::expandExecString(const QStringList& urls) const
         // A single file name, even if multiple files are selected.
         if (token == QLatin1String("%f"))
         {
-            if (!urls.isEmpty())
-                result << expandEnvVariables(urls.at(0));
             continue;
         }
 
@@ -1074,7 +853,6 @@ QStringList XdgDesktopFile::expandExecString(const QStringList& urls) const
         // Each file is passed as a separate argument to the executable program.
         if (token == QLatin1String("%F"))
         {
-            result << expandEnvVariables(urls);
             continue;
         }
 
@@ -1131,7 +909,6 @@ QStringList XdgDesktopFile::expandExecString(const QStringList& urls) const
         // the vfolder system) or a local filename or empty if no location is known.
         if (token == QLatin1String("%k"))
         {
-            result << fileName().replace(QLatin1Char('%'), QLatin1String("%%"));
             break;
         }
 
@@ -1151,176 +928,6 @@ QStringList XdgDesktopFile::expandExecString(const QStringList& urls) const
     }
 
     return result;
-}
-
-
-bool checkTryExec(const QString& progName)
-{
-    if (progName.startsWith(QDir::separator()))
-        return QFileInfo(progName).isExecutable();
-
-    const QStringList dirs = QFile::decodeName(qgetenv("PATH")).split(QLatin1Char(':'));
-
-    for (const QString &dir : dirs)
-    {
-        if (QFileInfo(QDir(dir), progName).isExecutable())
-            return true;
-    }
-
-    return false;
-}
-
-
-QString XdgDesktopFile::id(const QString &fileName, bool checkFileExists)
-{
-    const QFileInfo f(fileName);
-    if (checkFileExists) {
-        if (!f.exists()) {
-            return QString();
-        }
-    }
-
-    QString id = f.absoluteFilePath();
-    const QStringList dataDirs = XdgDirs::dataDirs();
-
-    for (const QString &d : dataDirs) {
-        if (id.startsWith(d)) {
-            // remove only the first occurence
-            id.replace(id.indexOf(d), d.size(), QString());
-        }
-    }
-
-    const QLatin1Char slash('/');
-    const QString s = slash + applicationsStr + slash;
-    if (!id.startsWith(s))
-        return QString();
-
-    id.replace(id.indexOf(s), s.size(), QString());
-    id.replace(slash, QLatin1Char('-'));
-
-    return id;
-}
-
-
-bool XdgDesktopFile::isShown(const QString &environment) const
-{
-    const QString env = environment.toUpper();
-
-    if (d->mIsShow.contains(env))
-        return d->mIsShow.value(env);
-
-    d->mIsShow.insert(env, false);
-
-    // Means "this application exists, but don't display it in the menus".
-    if (value(QLatin1String("NoDisplay")).toBool())
-        return false;
-
-    // The file is not suitable to the current environment
-    if (!isSuitable(true, env))
-        return false;
-
-    d->mIsShow.insert(env, true);
-    return true;
-}
-
-
-bool XdgDesktopFile::isSuitable(bool excludeHidden, const QString &environment) const
-{
-    // Hidden should have been called Deleted. It means the user deleted
-    // (at his level) something that was present
-    if (excludeHidden && value(QLatin1String("Hidden")).toBool())
-        return false;
-
-    // A list of strings identifying the environments that should display/not
-    // display a given desktop entry.
-    // OnlyShowIn ........
-    QString env;
-    //if (environment.isEmpty())
-    //    env = QString::fromLocal8Bit(detectDesktopEnvironment());
-    //else {
-        env = environment.toUpper();
-    //}
-
-    QString key;
-    bool keyFound = false;
-    if (contains(onlyShowInKey))
-    {
-        key = onlyShowInKey;
-        keyFound = true;
-    }
-    else
-    {
-        key = extendPrefixKey + onlyShowInKey;
-        keyFound = contains(key) ? true : false;
-    }
-
-    if (keyFound)
-    {
-        QStringList s = value(key).toString().toUpper().split(QLatin1Char(';'));
-        if (!s.contains(env))
-            return false;
-    }
-
-    // NotShowIn .........
-    if (contains(notShowInKey))
-    {
-        key = notShowInKey;
-        keyFound = true;
-    }
-    else
-    {
-        key = extendPrefixKey + notShowInKey;
-        keyFound = contains(key) ? true : false;
-    }
-
-    if (keyFound)
-    {
-        QStringList s = value(key).toString().toUpper().split(QLatin1Char(';'));
-        if (s.contains(env))
-            return false;
-    }
-
-    // actually installed. If not, entry may not show in menus, etc.
-    QString s = value(QLatin1String("TryExec")).toString();
-    if (!s.isEmpty() && ! checkTryExec(s))
-        return false;
-
-    return true;
-}
-
-
-QString expandDynamicUrl(QString url)
-{
-    const QStringList env = QProcess::systemEnvironment();
-    for (const QString &line : env)
-    {
-        QString name = line.section(QLatin1Char('='), 0, 0);
-        QString val =  line.section(QLatin1Char('='), 1);
-        url.replace(QString::fromLatin1("$%1").arg(name), val);
-        url.replace(QString::fromLatin1("${%1}").arg(name), val);
-    }
-
-    return url;
-}
-
-
-QString XdgDesktopFile::url() const
-{
-    if (type() != LinkType)
-        return QString();
-
-   QString url;
-
-   url = value(urlKey).toString();
-   if (!url.isEmpty())
-   return url;
-
-    // WTF? What standard describes it?
-    url = expandDynamicUrl(value(QLatin1String("URL[$e]")).toString());
-    if (!url.isEmpty())
-        return url;
-
-    return QString();
 }
 
 
@@ -1348,13 +955,31 @@ QString findDesktopFile(const QString& dirName, const QString& desktopName)
     return QString();
 }
 
-
 QString findDesktopFile(const QString& desktopName)
 {
-    QStringList dataDirs = XdgDirs::dataDirs();
-    dataDirs.prepend(XdgDirs::dataHome(false));
+    QString d = QFile::decodeName(qgetenv("XDG_DATA_DIRS"));
+    QStringList dirs = d.split(QLatin1Char(':'), QString::SkipEmptyParts);
 
-    for (const QString &dirName : const_cast<const QStringList&>(dataDirs))
+    if (dirs.isEmpty()) {
+        dirs.append(QString::fromLatin1("/usr/local/share"));
+        dirs.append(QString::fromLatin1("/usr/share"));
+    } else {
+        QMutableListIterator<QString> it(dirs);
+        while (it.hasNext()) {
+            const QString dir = it.next();
+            if (!dir.startsWith(QLatin1Char('/')))
+                it.remove();
+        }
+    }
+
+    dirs.removeDuplicates();
+    cleanAndAddPostfix(dirs, QString());
+
+    QString s = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation);
+    fixBashShortcuts(s);
+    removeEndingSlash(s);
+    dirs.prepend(s);
+    for (const QString &dirName : const_cast<const QStringList&>(dirs))
     {
         QString f = findDesktopFile(dirName + QLatin1String("/applications"), desktopName);
         if (!f.isEmpty())
@@ -1365,400 +990,11 @@ QString findDesktopFile(const QString& desktopName)
 }
 
 
-XdgDesktopFile* XdgDesktopFileCache::getFile(const QString& fileName)
-{
-    if (fileName.isEmpty())
-        return nullptr;
-
-    if (instance().m_fileCache.contains(fileName))
-    {
-        return instance().m_fileCache.value(fileName);
-    }
-
-    QString file;
-    if (!fileName.startsWith(QDir::separator()))
-    {
-        // Relative path
-        // Search desktop file ..................
-        file = findDesktopFile(fileName);
-        if (file.isEmpty())
-            return nullptr;
-    }
-    else
-    {
-        file = fileName;
-    }
-
-    XdgDesktopFile* desktopFile;
-
-    // The file was found
-    if (!instance().m_fileCache.contains(file))
-    {
-        desktopFile = load(file);
-        if (desktopFile)
-        {
-            instance().m_fileCache.insert(file, desktopFile);
-            return desktopFile;
-        }
-        else
-        {
-            return nullptr;
-        }
-    }
-    else
-    {
-        // already in the cache
-        desktopFile = instance().m_fileCache.value(file);
-        return desktopFile;
-    }
-
-}
-
-QList<XdgDesktopFile*> XdgDesktopFileCache::getAllFiles()
-{
-    return instance().m_fileCache.values();
-}
-
-
-
-XdgDesktopFileCache & XdgDesktopFileCache::instance()
-{
-    static XdgDesktopFileCache cache;
-    if (!cache.m_IsInitialized)
-    {
-       cache.initialize();
-       cache.m_IsInitialized = true;
-    }
-
-    return cache;
-}
-
-
-/*!
- * Handles files with a syntax similar to desktopfiles as QSettings files.
- * The differences between ini-files and desktopfiles are:
- * desktopfiles uses '#' as comment marker, and ';' as list-separator.
- * Every key/value must be inside a section (i.e. there is no 'General' pseudo-section)
- */
-bool readDesktopFile(QIODevice & device, QSettings::SettingsMap & map)
-{
-    QString section;
-    QTextStream stream(&device);
-
-    while (!stream.atEnd()) {
-        QString line = stream.readLine().trimmed();
-
-        // Skip comments and empty lines
-        if (line.startsWith(QLatin1Char('#')) || line.isEmpty())
-            continue;
-
-        // Section ..............................
-        if (line.startsWith(QLatin1Char('[')) && line.endsWith(QLatin1Char(']')))
-        {
-            section = line.mid(1, line.length()-2);
-            continue;
-        }
-
-        QString key = line.section(QLatin1Char('='), 0, 0).trimmed();
-        QString value = line.section(QLatin1Char('='), 1).trimmed();
-
-        if (key.isEmpty())
-            continue;
-
-        if (section.isEmpty())
-        {
-            qWarning() << "key=value outside section";
-            return false;
-        }
-
-        key.prepend(QLatin1Char('/'));
-        key.prepend(section);
-
-        if (value.contains(QLatin1Char(';')))
-        {
-            map.insert(key, value.split(QLatin1Char(';'), QString::SkipEmptyParts));
-        }
-        else
-        {
-            map.insert(key, value);
-        }
-
-    }
-
-    return true;
-}
-
-
-/*! See readDesktopFile
- */
-bool writeDesktopFile(QIODevice & device, const QSettings::SettingsMap & map)
-{
-    QTextStream stream(&device);
-    QString section;
-
-    for (auto it = map.constBegin(); it != map.constEnd(); ++it)
-    {
-        bool isString     = it.value().canConvert<QString>();
-        bool isStringList = (it.value().type() == QVariant::StringList);
-
-        if ((! isString) && (! isStringList))
-        {
-            return false;
-        }
-
-        QString thisSection = it.key().section(QLatin1Char('/'), 0, 0);
-        if (thisSection.isEmpty())
-        {
-            qWarning() << "No section defined";
-            return false;
-        }
-
-        if (thisSection != section)
-        {
-            stream << QLatin1Char('[') << thisSection << QLatin1Char(']') << QLatin1Char('\n');
-            section = thisSection;
-        }
-
-        QString remainingKey = it.key().section(QLatin1Char('/'), 1, -1);
-
-        if (remainingKey.isEmpty())
-        {
-            qWarning() << "Only one level in key..." ;
-            return false;
-        }
-
-        stream << remainingKey << QLatin1Char('=');
-
-        if (isString)
-        {
-            stream << it.value().toString() << QLatin1Char(';');
-        }
-        else /* if (isStringList) */
-        {
-            const auto values = it.value().toStringList();
-            for (const QString &value : values)
-            {
-                stream << value << QLatin1Char(';');
-            }
-        }
-
-        stream << QLatin1Char('\n');
-
-    }
-
-    return true;
-}
-
-
-void XdgDesktopFileCache::initialize(const QString& dirName)
-{
-    QDir dir(dirName);
-    // Directories have the type "application/x-directory", but in the desktop file
-    // are shown as "inode/directory". To handle these cases, we use this hash.
-    QHash<QString, QString> specials;
-    specials.insert(QLatin1String("inode/directory"), QLatin1String("application/x-directory"));
-
-
-    // Working recursively ............
-    const QFileInfoList files = dir.entryInfoList(QStringList(), QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot);
-    for (const QFileInfo &f : files)
-    {
-        if (f.isDir())
-        {
-            initialize(f.absoluteFilePath());
-            continue;
-        }
-
-
-        XdgDesktopFile* df = load(f.absoluteFilePath());
-        if (!df)
-            continue;
-
-        if (! m_fileCache.contains(f.absoluteFilePath()))
-        {
-            m_fileCache.insert(f.absoluteFilePath(), df);
-        }
-
-        const QStringList mimes = df->value(mimeTypeKey).toString().split(QLatin1Char(';'), QString::SkipEmptyParts);
-
-        for (const QString &mime : mimes)
-        {
-            int pref = df->value(initialPreferenceKey, 0).toInt();
-            // We move the desktopFile forward in the list for this mime, so that
-            // no desktopfile in front of it have a lower initialPreference.
-            int position = m_defaultAppsCache[mime].length();
-            while (position > 0 && m_defaultAppsCache[mime][position - 1]->value(initialPreferenceKey, 0).toInt() < pref)
-            {
-                position--;
-            }
-            m_defaultAppsCache[mime].insert(position, df);
-        }
-    }
-
-}
-
-
-XdgDesktopFile* XdgDesktopFileCache::load(const QString& fileName)
-{
-    XdgDesktopFile* desktopFile = new XdgDesktopFile();
-
-    Q_CHECK_PTR(desktopFile);
-    if (desktopFile && desktopFile->load(fileName))
-        return desktopFile;
-
-    delete desktopFile;
-    return nullptr;
-}
-
-
-void loadMimeCacheDir(const QString& dirName, QHash<QString, QList<XdgDesktopFile*> > & cache)
-{
-    QDir dir(dirName);
-    // Directories have the type "application/x-directory", but in the desktop file
-    // are shown as "inode/directory". To handle these cases, we use this hash.
-    QHash<QString, QString> specials;
-    specials.insert(QLatin1String("inode/directory"), QLatin1String("application/x-directory"));
-
-
-    // Working recursively ............
-    const QFileInfoList files = dir.entryInfoList(QStringList(), QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot);
-    for (const QFileInfo &f : files)
-    {
-        if (f.isDir())
-        {
-            loadMimeCacheDir(f.absoluteFilePath(), cache);
-            continue;
-        }
-
-
-        XdgDesktopFile* df = XdgDesktopFileCache::getFile(f.absoluteFilePath());
-        if (!df)
-            continue;
-
-        const QStringList mimes = df->value(mimeTypeKey).toString().split(QLatin1Char(';'), QString::SkipEmptyParts);
-
-        for (const QString &mime : mimes)
-        {
-            int pref = df->value(initialPreferenceKey, 0).toInt();
-            // We move the desktopFile forward in the list for this mime, so that
-            // no desktopfile in front of it have a lower initialPreference.
-            int position = cache[mime].length();
-            while (position > 0 && cache[mime][position - 1]->value(initialPreferenceKey, 0).toInt() < pref)
-            {
-                position--;
-            }
-            cache[mime].insert(position, df);
-        }
-    }
-}
-
-QSettings::Format XdgDesktopFileCache::desktopFileSettingsFormat()
-{
-    static QSettings::Format format = QSettings::InvalidFormat;
-
-    if (format == QSettings::InvalidFormat)
-        format = QSettings::registerFormat(QLatin1String("*.list"), readDesktopFile, writeDesktopFile);
-
-    return format;
-}
-
-
-XdgDesktopFileCache::XdgDesktopFileCache() :
-    m_IsInitialized(false),
-        m_defaultAppsCache(),
-        m_fileCache()
-{
-}
-
-
-XdgDesktopFileCache::~XdgDesktopFileCache()
-{
-}
-
-
-void XdgDesktopFileCache::initialize()
-{
-    QStringList dataDirs = XdgDirs::dataDirs();
-    dataDirs.prepend(XdgDirs::dataHome(false));
-
-    for (const QString &dirname : const_cast<const QStringList&>(dataDirs))
-    {
-        initialize(dirname + QLatin1String("/applications"));
-//        loadMimeCacheDir(dirname + "/applications", m_defaultAppsCache);
-    }
-}
-
-QList<XdgDesktopFile*> XdgDesktopFileCache::getAppsOfCategory(const QString& category)
-{
-    QList<XdgDesktopFile*> list;
-    const QString _category = category.toUpper();
-    const QHash<QString, XdgDesktopFile*> fileCache = instance().m_fileCache;
-    for (XdgDesktopFile *desktopFile : fileCache)
-    {
-        QStringList categories = desktopFile->value(categoriesKey).toString().toUpper().split(QLatin1Char(';'));
-        if (!categories.isEmpty() && (categories.contains(_category) || categories.contains(QLatin1String("X-") + _category)))
-            list.append(desktopFile);
-    }
-    return list;
-}
-
-QList<XdgDesktopFile*>  XdgDesktopFileCache::getApps(const QString& mimetype)
-{
-    return instance().m_defaultAppsCache.value(mimetype);
-}
-
-
-XdgDesktopFile* XdgDesktopFileCache::getDefaultApp(const QString& mimetype)
-{
     // First, we look in following places for a default in specified order:
     // ~/.config/mimeapps.list
     // /etc/xdg/mimeapps.list
     // ~/.local/share/applications/mimeapps.list
     // /usr/local/share/applications/mimeapps.list
     // /usr/share/applications/mimeapps.list
-    QStringList mimeDirsList;
-
-    mimeDirsList.append(XdgDirs::configHome(false));
-    mimeDirsList.append(XdgDirs::configDirs());
-    mimeDirsList.append(XdgDirs::dataHome(false) + QLatin1String("/applications"));
-    mimeDirsList.append(XdgDirs::dataDirs(QLatin1String("/applications")));
-
-    for (const QString &mimeDir : const_cast<const QStringList&>(mimeDirsList))
-    {
-        QString defaultsListPath = mimeDir + QLatin1String("/mimeapps.list");
-        if (QFileInfo::exists(defaultsListPath))
-        {
-            QSettings defaults(defaultsListPath, desktopFileSettingsFormat());
 
 
-            defaults.beginGroup(QLatin1String("Default Applications"));
-            if (defaults.contains(mimetype))
-            {
-                QVariant value = defaults.value(mimetype);
-                if (value.canConvert<QStringList>()) // A single string can also convert to a stringlist
-                {
-                    const QStringList values = value.toStringList();
-                    for (const QString &desktopFileName : values)
-                    {
-                        XdgDesktopFile* desktopFile = XdgDesktopFileCache::getFile(desktopFileName);
-                        if (desktopFile)
-                        {
-                            return desktopFile;
-                        }
-                        else
-                        {
-                            qWarning() << desktopFileName << "not a valid desktopfile";
-                        }
-                    }
-                }
-            }
-            defaults.endGroup();
-        }
-    }
-
-    // If we havent found anything up to here, we look for a desktopfile that declares
-    // the ability to handle the given mimetype. See getApps.
-    QList<XdgDesktopFile*> apps = getApps(mimetype);
-    XdgDesktopFile* desktopFile = apps.isEmpty() ? 0 : apps[0];
-    return desktopFile;
-}

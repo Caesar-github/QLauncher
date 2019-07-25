@@ -1,17 +1,11 @@
 QT += widgets
 
 HEADERS       = desktopwindow.h \
-		xdgdesktopfile.h \
-		xdgdesktopfile_p.h \
-		xdgdirs.h \
-		xdgicon.h \
-		xdgmacros.h
+                xdgdesktopfile.h
 
 SOURCES       = desktopwindow.cpp \
 		main.cpp \
-		xdgdesktopfile.cpp \
-		xdgdirs.cpp \
-		xdgicon.cpp
+                xdgdesktopfile.cpp
 
 RESOURCES     += QLauncher.qrc
 

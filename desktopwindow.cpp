@@ -76,7 +76,7 @@ DesktopWindow::DesktopWindow()
         }
         setSpacing(base/25);
         setViewMode(QListView::IconMode);
-        setFlow(QListView::LeftToRight);
+        setFlow(QListView::TopToBottom);
         setDragEnabled(false);
         setIconSize(QSize(base/8,base/8));
         setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);

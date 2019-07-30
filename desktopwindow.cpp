@@ -83,7 +83,7 @@ DesktopWindow::DesktopWindow()
         setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         setStyleSheet("background-color:transparent");
         setStyleSheet(tr("border-image: url(:/resources/background.jpg);"));
-//        connect(this, SIGNAL(itemPressed(QListWidgetItem *)), this, SLOT(on_itemClicked(QListWidgetItem *)));
+        connect(this, SIGNAL(itemPressed(QListWidgetItem *)), this, SLOT(on_itemClicked(QListWidgetItem *)));
         connect(this, SIGNAL(itemClicked(QListWidgetItem *)), this, SLOT(on_itemClicked(QListWidgetItem *)));
     } else
         qDebug()<<"QLauncher no found .desktop file in"<<DESKTOP_DIR;

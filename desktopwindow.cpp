@@ -78,6 +78,8 @@ DesktopWindow::DesktopWindow()
         setViewMode(QListView::IconMode);
         setFlow(QListView::TopToBottom);
         setDragEnabled(false);
+        setWindowState(Qt::WindowMaximized);
+        setWindowFlag(Qt::FramelessWindowHint);
         setIconSize(QSize(base/8,base/8));
         setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);

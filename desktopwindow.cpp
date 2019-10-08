@@ -53,11 +53,13 @@
 
 #define DESKTOP_DIR "/usr/share/applications"
 
+#define ICON_SIZE 128
+#define ITEM_SPACE ICON_SIZE/6
+#define FONT_SIZE ICON_SIZE/6
 DesktopWindow::DesktopWindow()
 {
     QDesktopWidget *desktopwidget = QApplication::desktop();
     QRect desktoprect = desktopwidget->availableGeometry();
-    int base = qMin(desktoprect.width(),desktoprect.height());
     qDebug() << "QLauncher available size :" << desktoprect.width() << "x" << desktoprect.height();
 
     QDir dir(DESKTOP_DIR);
@@ -67,24 +69,36 @@ DesktopWindow::DesktopWindow()
     list = dir.entryInfoList();
 
     if (list.length()!=0) {
+        QListWidget *desktopList = new QListWidget();
         for (int i = 0; i < list.size(); ++i) {
             XdgDesktopFile df;
             df.load(list.at(i).fileName());
             QListWidgetItem *item = new QListWidgetItem(df.icon(), df.name());
             qDebug() << "QLauncher add application:" << i << df.name();
-            addItem(item);
+            QFont font;
+            font.setPixelSize(ICON_SIZE/6);
+            item->setFont(font);
+            item->setSizeHint(QSize(ICON_SIZE, ICON_SIZE+ICON_SIZE/8));
+            desktopList->addItem(item);
         }
-        setSpacing(base/25);
-        setViewMode(QListView::IconMode);
-        setFlow(QListView::TopToBottom);
-        setDragEnabled(false);
+        desktopList->setSpacing(ITEM_SPACE);
+        desktopList->setViewMode(QListView::IconMode);
+        desktopList->setFlow(QListView::LeftToRight);
+        desktopList->setDragEnabled(false);
+        desktopList->setWordWrap(true);
+        desktopList->setFrameShape(QListWidget::NoFrame);
+        desktopList->setGridSize(QSize(ICON_SIZE + ITEM_SPACE, ICON_SIZE + ITEM_SPACE));
+        desktopList->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        desktopList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        desktopList->setStyleSheet("background-color:transparent");
+//        desktopList->setIconSize(QSize(ICON_SIZE, ICON_SIZE));
+        desktopList->setResizeMode(QListWidget::Adjust);
+        setCentralWidget(desktopList);
+
         setWindowState(Qt::WindowMaximized);
         setWindowFlag(Qt::FramelessWindowHint);
-        setIconSize(QSize(base/8,base/8));
-        setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        setStyleSheet("background-color:transparent");
-        setStyleSheet(tr("border-image: url(:/resources/background.jpg);"));
+        setStyleSheet("QListWidget{background-color:transparent}");
+        setStyleSheet("QMainWindow{border-image: url(:/resources/background.jpg);}");
         connect(this, SIGNAL(itemPressed(QListWidgetItem *)), this, SLOT(on_itemClicked(QListWidgetItem *)));
     } else
         qDebug()<<"QLauncher no found .desktop file in"<<DESKTOP_DIR;

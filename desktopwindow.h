@@ -53,7 +53,7 @@
 
 #include <QtWidgets>
 
-class DesktopWindow : public QListWidget
+class DesktopWindow : public QMainWindow
 {
     Q_OBJECT
 

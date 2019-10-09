@@ -73,12 +73,12 @@ DesktopWindow::DesktopWindow()
         for (int i = 0; i < list.size(); ++i) {
             XdgDesktopFile df;
             df.load(list.at(i).fileName());
-            QListWidgetItem *item = new QListWidgetItem(df.icon(), df.name());
+            QListWidgetItem *item = new QListWidgetItem(df.icon(ICON_SIZE), df.name());
             qDebug() << "QLauncher add application:" << i << df.name();
             QFont font;
-            font.setPixelSize(ICON_SIZE/6);
+            font.setPixelSize(FONT_SIZE);
             item->setFont(font);
-            item->setSizeHint(QSize(ICON_SIZE, ICON_SIZE+ICON_SIZE/8));
+            item->setSizeHint(QSize(ICON_SIZE, ICON_SIZE+FONT_SIZE));
             desktopList->addItem(item);
         }
         desktopList->setSpacing(ITEM_SPACE);
@@ -86,12 +86,13 @@ DesktopWindow::DesktopWindow()
         desktopList->setFlow(QListView::LeftToRight);
         desktopList->setDragEnabled(false);
         desktopList->setWordWrap(true);
+        desktopList->setWrapping(true);
         desktopList->setFrameShape(QListWidget::NoFrame);
         desktopList->setGridSize(QSize(ICON_SIZE + ITEM_SPACE, ICON_SIZE + ITEM_SPACE));
         desktopList->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         desktopList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         desktopList->setStyleSheet("background-color:transparent");
-//        desktopList->setIconSize(QSize(ICON_SIZE, ICON_SIZE));
+        desktopList->setIconSize(QSize(ICON_SIZE, ICON_SIZE));
         desktopList->setResizeMode(QListWidget::Adjust);
         setCentralWidget(desktopList);
 

@@ -581,7 +581,7 @@ bool XdgDesktopFile::isValid() const
  Returns the QIcon corresponding to name in the current icon theme. If no such icon
  is found in the current theme fallback is return instead.
  ************************************************/
-QIcon XdgDesktopFile::fromTheme(const QString& iconName, const QIcon& fallback)
+QIcon XdgDesktopFile::fromTheme(const QString& iconName, int size, const QIcon& fallback)
 {
     if (iconName.isEmpty())
         return fallback;
@@ -603,24 +603,24 @@ QIcon XdgDesktopFile::fromTheme(const QString& iconName, const QIcon& fallback)
         QFileInfo fileInfoPng(absolute_name_png);
         QFileInfo fileInfoXpm(absolute_name_xpm);
         if(fileInfoPng.isFile())
-            cachedIcon = new QIcon(absolute_name_png);
+            cachedIcon = new QIcon(QPixmap(absolute_name_png).scaled(QSize(size, size)));
         else if(fileInfoXpm.isFile())
-            cachedIcon = new QIcon(absolute_name_xpm);
+            cachedIcon = new QIcon(QPixmap(absolute_name_xpm).scaled(QSize(size, size)));
         else
-            cachedIcon = new QIcon(DEFAULT_ICON);
+            cachedIcon = new QIcon(QPixmap(DEFAULT_ICON).scaled(QSize(size, size)));
     } else {
-        cachedIcon = new QIcon(iconName);
+        cachedIcon = new QIcon(QPixmap(iconName).scaled(QSize(size, size)));
     }
 
     return *cachedIcon;
 }
 
-QIcon const XdgDesktopFile::icon(const QIcon& fallback) const
+QIcon const XdgDesktopFile::icon(int size, const QIcon& fallback) const
 {
-    QIcon result = fromTheme(value(iconKey).toString(), fallback);
+    QIcon result = fromTheme(value(iconKey).toString(), size,  fallback);
 
     if (result.isNull() && type() == ApplicationType) {
-        result = fromTheme(QLatin1String("application-x-executable.png"));
+        result = fromTheme(QLatin1String("application-x-executable.png"), size);
         // TODO Maybe defaults for other desktopfile types as well..
     }
 

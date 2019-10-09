@@ -112,9 +112,9 @@ public:
     //! Returns true if the XdgDesktopFile is valid; otherwise returns false.
     bool isValid() const;
 
-    static QIcon fromTheme(const QString& iconName, const QIcon& fallback = QIcon());
+    static QIcon fromTheme(const QString& iconName, int size, const QIcon& fallback = QIcon());
     //! Returns an icon specified in this file.
-    QIcon const icon(const QIcon& fallback = QIcon()) const;
+    QIcon const icon(int size, const QIcon& fallback = QIcon()) const;
 
     //! This function is provided for convenience. It's equivalent to calling localizedValue("Name").toString().
     QString name() const { return localizedValue(QLatin1String("Name")).toString(); }

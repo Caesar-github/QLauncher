@@ -74,7 +74,7 @@ DesktopWindow::DesktopWindow()
             XdgDesktopFile df;
             df.load(list.at(i).fileName());
             QListWidgetItem *item = new QListWidgetItem(df.icon(ICON_SIZE), df.name());
-            qDebug() << "QLauncher add application:" << i << df.name();
+//            qDebug() << "QLauncher add application:" << i << df.name();
             QFont font;
             font.setPixelSize(FONT_SIZE);
             item->setFont(font);
@@ -95,11 +95,27 @@ DesktopWindow::DesktopWindow()
         desktopList->setIconSize(QSize(ICON_SIZE, ICON_SIZE));
         desktopList->setResizeMode(QListWidget::Adjust);
         setCentralWidget(desktopList);
-
         setWindowState(Qt::WindowMaximized);
         setWindowFlag(Qt::FramelessWindowHint);
         setStyleSheet("QListWidget{background-color:transparent}");
-        setStyleSheet("QMainWindow{border-image: url(:/resources/background.jpg);}");
+        QProcess p;
+        p.start("cat /etc/os-release");
+        p.waitForStarted();
+        p.waitForFinished();
+        QTextStream tt(p.readAllStandardOutput());
+        QString ll;
+        bool found = 0;
+        do{
+            ll = tt.readLine();
+//            qDebug() << ll;
+            if(!ll.compare("NAME=\"Debian GNU/Linux\"")){
+                found = true;
+            }
+        }while (! ll.isNull());
+        if(found)
+            setStyleSheet("QMainWindow{border-image: url(:/resources/background_debian.jpg);}");
+        else
+            setStyleSheet("QMainWindow{border-image: url(:/resources/background_linux.jpg);}");
         connect(desktopList, SIGNAL(itemPressed(QListWidgetItem *)), this, SLOT(on_itemClicked(QListWidgetItem *)));
     } else
         qDebug()<<"QLauncher no found .desktop file in"<<DESKTOP_DIR;

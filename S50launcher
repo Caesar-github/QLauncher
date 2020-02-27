@@ -14,8 +14,13 @@ case "$1" in
 		mkdir -p /tmp/.xdg &&  chmod 0700 /tmp/.xdg
 		export XDG_RUNTIME_DIR=/tmp/.xdg
 		weston --tty=2 --idle-time=0&
-		sleep 1
-		/usr/bin/QLauncher &
+		{
+			# Wait for weston ready
+			while [ ! -e ${XDG_RUNTIME_DIR}/wayland-0 ]; do
+				sleep .1
+			done
+			/usr/bin/QLauncher &
+		}&
 	;;
   stop)
 		killall QLauncher

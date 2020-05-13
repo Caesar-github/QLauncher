@@ -96,7 +96,7 @@ DesktopWindow::DesktopWindow()
         desktopList->setResizeMode(QListWidget::Adjust);
         setCentralWidget(desktopList);
         setWindowState(Qt::WindowMaximized);
-        setWindowFlag(Qt::FramelessWindowHint);
+        setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnBottomHint);
         setStyleSheet("QListWidget{background-color:transparent}");
         QProcess p;
         p.start("cat /etc/os-release");

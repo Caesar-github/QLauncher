@@ -54,8 +54,8 @@
 #define DESKTOP_DIR "/usr/share/applications"
 
 #define ICON_SIZE 128
-#define ITEM_SPACE ICON_SIZE/6
-#define FONT_SIZE ICON_SIZE/6
+#define ITEM_SPACE ICON_SIZE / 2
+#define FONT_SIZE ICON_SIZE / 6
 DesktopWindow::DesktopWindow()
 {
     QDesktopWidget *desktopwidget = QApplication::desktop();
@@ -78,7 +78,7 @@ DesktopWindow::DesktopWindow()
             QFont font;
             font.setPixelSize(FONT_SIZE);
             item->setFont(font);
-            item->setSizeHint(QSize(ICON_SIZE, ICON_SIZE+FONT_SIZE));
+            item->setSizeHint(QSize(ICON_SIZE + ITEM_SPACE, ICON_SIZE + FONT_SIZE + ITEM_SPACE));
             desktopList->addItem(item);
         }
         desktopList->setSpacing(ITEM_SPACE);

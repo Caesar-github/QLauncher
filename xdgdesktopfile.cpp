@@ -445,7 +445,6 @@ XdgDesktopFile::XdgDesktopFile():
 XdgDesktopFile::XdgDesktopFile(const XdgDesktopFile& other):
     d(other.d)
 {
-    QIcon::setFallbackThemeName("hicolor");
 }
 
 XdgDesktopFile::~XdgDesktopFile()
